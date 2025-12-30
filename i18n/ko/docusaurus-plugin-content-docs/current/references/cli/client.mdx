@@ -1,0 +1,722 @@
+---
+title: Sui Client CLI
+description: Sui 클라이언트 CLI는 Sui 네트워크와 상호 작용하기 위한 명령 수준의 액세스를 제공한다.
+keywords:
+  - sui cli
+  - sui client cli
+  - sui client cli
+  - sui client
+  - sui cli help
+  - sui cli reference
+  - sui cli commands
+  - cli commands
+  - cli reference
+---
+
+Sui CLI `client` 명령어는 Sui 네트워크와 상호 작용할 수 있는 명령 수준의 접근을 제공한다. `sui client` 의 일반적인 사용 사례로는 Move 스마트컨트랙트 게시, object 정보 조회, transaction 실행 또는 주소 관리 등이 있다.
+
+<importcontent source="cli-check-install.mdx" mode="snippet"></importcontent>
+
+## Commands
+
+다음 목록은 `sui client` 명령에 사용할 수 있는 모든 하위 명령을 항목별로 나열한 것이다.
+
+```
+Usage: sui client [OPTIONS] [COMMAND]
+
+Commands:
+  active-address              Default address used for commands when none specified
+  active-env                  Default environment used for commands when none specified
+  addresses                   Obtain the Addresses managed by the client
+  balance                     List the coin balance of an address
+  call                        Call Move function
+  chain-identifier            Query the chain identifier from the rpc endpoint
+  dynamic-field               Query a dynamic field by its address
+  envs                        List all Sui environments
+  execute-signed-tx           Execute a Signed Transaction. This is useful when the user prefers to sign elsewhere and use this command to execute
+  execute-combined-signed-tx  Execute a combined serialized SenderSignedData string
+  faucet                      Request gas coin from faucet. By default, it will use the active address and the active network
+  gas                         Obtain all gas objects owned by the address. An address' alias can be used instead of the address
+  merge-coin                  Merge two coin objects into one coin
+  new-address                 Generate new address and key pair with key pair scheme flag {ed25519 | secp256k1 | secp256r1} with optional derivation path, default to m/44'/784'/0'/0'/0' for ed25519 or m/54'/784'/0'/0/0
+                                  for secp256k1 or m/74'/784'/0'/0/0 for secp256r1. Word length can be { word12 | word15 | word18 | word21 | word24} default to word12 if not specified
+  new-env                     Add new Sui environment
+  object                      Get object information
+  objects                     Obtain all objects owned by the address. It also accepts an address by its alias
+  pay                         Pay coins to recipients following specified amounts, with input coins. Length of recipients must be the same as that of amounts
+  pay-all-sui                 Pay all residual SUI coins to the recipient with input coins, after deducting the gas cost. The input coins also include the coin for gas payment, so no extra gas coin is required
+  pay-sui                     Pay SUI coins to recipients following following specified amounts, with input coins. Length of recipients must be the same as that of amounts. The input coins also include the coin for
+                                  gas payment, so no extra gas coin is required
+  publish                     Publish Move modules
+  split-coin                  Split a coin object into multiple coins
+  switch                      Switch active address and network(e.g., devnet, local rpc server)
+  tx-block                    Get the effects of executing the given transaction block
+  transfer                    Transfer object
+  transfer-sui                Transfer SUI, and pay gas with the same SUI coin object. If amount is specified, only the amount is transferred; otherwise the entire object is transferred
+  upgrade                     Upgrade Move modules
+  verify-bytecode-meter       Run the bytecode verifier on the package
+  verify-source               Verify local Move packages against on-chain packages, and optionally their dependencies
+  replay-transaction          Replay a given transaction to view transaction effects. Set environment variable MOVE_VM_STEP=1 to debug
+  replay-batch                Replay transactions listed in a file
+  replay-checkpoint           Replay all transactions in a range of checkpoints
+  help                        Print this message or the help of the given subcommand(s)
+
+Options:
+      --client.config <CONFIG>  Sets the file storing the state of our user accounts (an empty one will be created if missing)
+      --json                    Return command outputs in json format
+  -y, --yes
+  -h, --help                    Print help
+```
+
+## JSON output
+
+Sui CLI의 인간 친화적인 형식인 기본 형식 대신 JSON 형식으로 응답을 표시하려면 명령어에 `--json` 플래그를 추가한다. 이는 데이터 세트가 매우 큰 경우, 특히 작은 화면에서 결과가 제대로 표시되지 않을 때 유용하다. 이러한 경우에 `--json` 플래그를 사용하면 편리하다.
+
+## Examples
+
+다음 예시는 가장 자주 사용되는 몇 가지 명령어이다.
+
+### List available network environments
+
+`sui client envs` 명령어를 사용하여 CLI에 설정된 네트워크 환경을 확인할 수 있다. 이러한 환경 정보는 Sui 구성 디렉터리( `~/.sui/sui_config` )의 client.yaml 파일에도 저장되어 있다.
+
+```sh
+╭────────┬────────────────────────────────────┬────────╮
+│ alias  │ url                                │ active │
+├────────┼────────────────────────────────────┼────────┤
+│ devnet │ https://fullnode.devnet.sui.io:443 │ *  	   │
+╰────────┴────────────────────────────────────┴────────╯
+```
+
+### Create network environment
+
+`client new-env`를 사용하여 새로운 네트워크 환경에 대한 세부 정보를 추가한다. 이 예제에서는 Sui 메인넷을 가리키는 환경 포인터를 생성한다. `alias` 값을 설정하면 환경 참조 시 오타 발생 가능성을 줄일 수 있다. 이 명령어를 실행하면 Sui는 `~/.sui/sui_config` 에 있는 `client.yaml` 파일을 새 정보로 업데이트한다.
+
+```
+$ sui client new-env --alias=mainnet --rpc https://fullnode.mainnet.sui.io:443
+
+Added new Sui env [mainnet] to config.
+```
+
+### Set current environment
+
+`sui client switch` 명령을 사용하여 현재 네트워크를 변경한다. 이 예제에서는 현재 네트워크를 `mainnet` 으로 전환한다.
+
+```sh
+$ sui client switch --env mainnet
+```
+
+```sh
+Active environment switched to [mainnet]
+```
+
+이 명령을 실행한 후 `sui client envs` 명령을 실행하면 표에서 `mainnet` 행의 `active` 열에 별표가 표시된다.
+
+### Get current active address
+
+`sui client active-address` 명령어를 사용하면 현재 주소를 확인할 수 있다. CLI는 사용자가 Sui 주소 값을 제공하지 않을 경우, 현재 활성 주소를 사용하여 주소별 CLI 명령어(예: `sui client objects` )를 실행한다.
+
+```sh
+$ sui client active-address
+```
+
+```sh
+0x514692f08249c3e9951234ce29074695840422564bff85e424b56de462913e0d
+```
+
+### Request a SUI coin from faucet
+
+표준 공개 RPC(예: `fullnode.devnet.sui.io:443` ) 중 하나를 사용하는 경우 `faucet` 명령어를 사용하여 가스 코인을 요청할 수 있다. 사용자 지정 faucet 서비스를 사용하는 경우 `--url` 옵션을 사용하여 faucet URL을 전달한다. `faucet` 명령어는 로컬 네트워크에서도 작동한다. 사용자 지정 faucet 포트로 네트워크를 시작하는 경우 `--url` 옵션을 포함한다.
+
+```sh
+$ sui client faucet
+```
+
+```sh
+Request successful. It can take up to 1 minute to get the coin. Run sui client gas to check your gas coins.
+```
+
+### Get objects owned by an address
+
+`sui client objects` 사용하여 현재 활성 주소가 소유한 object에 대한 요약 정보를 나열할 수 있다. 특정 주소에 대한 object 목록을 표시하려면 명령에 Sui 주소 값을 제공할 수 있다. 이 예는 현재 활성 주소에 대한 object 목록이다.
+
+```sh
+$ sui client objects 0x36df11369cf00ecf0be68d6ba965b0abe2e883bc5245911e3a29ebfa0aaf6b69
+```
+
+```sh
+╭───────────────────────────────────────────────────────────────────────────────────────╮
+| ╭────────────┬──────────────────────────────────────────────────────────────────────╮ │
+│ │ objectId   │  0xfffbb30ccb631f15f6cd36700589fc9c31cb04af28a95f3ed26d62daf3acb57f  │ │
+│ │ version	   │  33363559                                                        	  │ │
+│ │ digest 	   │  IY7/qsIJhliQL0uxwSzNYu0SMcn5AMsqQklSGngn1V0=                    	  │ │
+│ │ objectType │  0x0000..0002::coin::Coin                                        	  │ │
+│ ╰────────────┴──────────────────────────────────────────────────────────────────────╯ │
+│ ╭────────────┬──────────────────────────────────────────────────────────────────────╮ │
+│ │ objectId   │  0xfffe59fb6f78b1ced7f6537e69a205cc45d105270857bfd66332f9a627a38ae0  │ │
+│ │ version	   │  33370864                                                            │ │
+│ │ digest     │  b+tKChvujbCk/UCm8L+lflyb6Vjt7beB+uz6+ahUHmM=                    	  │ │
+│ │ objectType │  0x0000..0002::coin::Coin                                        	  │ │
+│ ╰────────────┴──────────────────────────────────────────────────────────────────────╯ │
+╰───────────────────────────────────────────────────────────────────────────────────────╯
+```
+
+### Get complete object information
+
+`sui client object <OBJECT-ID>`를 사용하여 지정한 ID에 대한 object 정보를 나열할 수 있다. 이 예시에서는 코인 object의 정보를 표시하고 있다.
+
+```sh
+$ sui client object 0xfffbb30ccb631f15f6cd36700589fc9c31cb04af28a95f3ed26d62daf3acb57f
+```
+
+```sh
+╭───────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ objectId  	  │  0xfffbb30ccb631f15f6cd36700589fc9c31cb04af28a95f3ed26d62daf3acb57f                                             	  │
+│ version   	  │  33363559                                                                                                       	  │
+│ digest    	  │  3FzvXJVVVcXb9H6dEXdARaY9EmxXyyNFduet3X4eYV4x                                                                   	  │
+│ objType   	  │  0x2::coin::Coin<0x2::sui::SUI>                                                                                 	  │
+│ ownerType 	  │  AddressOwner                                                                                                   	  │
+│ prevTx    	  │  ES2RQThjRE5u8rwiUEnhcnMoLA3cHeEGYJ8Pq98tmyAc                                                                   	  │
+│ storageRebate │  988000                                                                                                         	  │
+│ content   	  │ ╭───────────────────┬─────────────────────────────────────────────────────────────────────────────────────────────╮ │
+│           	  │ │ dataType      	  │  moveObject                                                                            	    │ │
+│           	  │ │ type          	  │  0x2::coin::Coin<0x2::sui::SUI>                                                       	    │ │
+│           	  │ │ hasPublicTransfer │  true                                                                                    	  │ │
+│           	  │ │ fields        	  │ ╭─────────┬───────────────────────────────────────────────────────────────────────────────╮ │ │
+│           	  │ │               	  │ │ balance │  530076676                                                                	  │ │ │
+│           	  │ │               	  │ │ id  	  │ ╭────┬──────────────────────────────────────────────────────────────────────╮ │ │ │
+│           	  │ │               	  │ │     	  │ │ id │  0xfffbb30ccb631f15f6cd36700589fc9c31cb04af28a95f3ed26d62daf3acb57f  │ │ │ │
+│           	  │ │               	  │ │     	  │ ╰────┴──────────────────────────────────────────────────────────────────────╯ │ │ │
+│           	  │ │               	  │ ╰─────────┴───────────────────────────────────────────────────────────────────────────────╯ │ │
+│           	  │ ╰───────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────╯ │
+╰───────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+```
+
+### Get dynamic fields of an object
+
+`sui client dynamic-field <DYNAMIC-FIELD-ID>` 명령을 사용하여 지정한 ID를 가진 동적 필드의 세부 정보를 나열할 수 있다.
+
+```sh
+$ sui client dynamic-field 0x5
+```
+
+```sh
+╭─────────────┬───────────────────────────────────────────────────────────────────────────────────────────╮
+│ hasNextPage │  false                                                                                	  │
+│ nextCursor  │  0x5b890eaf2abcfa2ab90b77b8e6f3d5d8609586c3e583baf3dccd5af17edf48d1                   	  │
+│ data     	  │ ╭───────────────────────────────────────────────────────────────────────────────────────╮ │
+│         	  │ │ ╭────────────┬──────────────────────────────────────────────────────────────────────╮ │ │
+│         	  │ │ │ name   	   │ ╭───────┬───────╮                                                	  │ │ │
+│         	  │ │ │        	   │ │ type  │  u64  │                                                	  │ │ │
+│         	  │ │ │        	   │ │ value │  2	 │                                                	    │ │ │
+│         	  │ │ │        	   │ ╰───────┴───────╯                                                	  │ │ │
+│         	  │ │ │ bcsName	   │  LQM2cdzDY3                                                      	  │ │ │
+│         	  │ │ │ type   	   │  DynamicField                                                    	  │ │ │
+│         	  │ │ │ objectType │  0x3::sui_system_state_inner::SuiSystemStateInnerV2              	  │ │ │
+│         	  │ │ │ objectId   │  0x5b890eaf2abcfa2ab90b77b8e6f3d5d8609586c3e583baf3dccd5af17edf48d1  │ │ │
+│         	  │ │ │ version	   │  112                                                             	  │ │ │
+│         	  │ │ │ digest 	   │  HMrm1KNKjq3GfB1cWTRdvRo8gk7auhgvoZXaVoyEHqUR                    	  │ │ │
+│         	  │ │ ╰────────────┴──────────────────────────────────────────────────────────────────────╯ │ │
+│         	  │ ╰───────────────────────────────────────────────────────────────────────────────────────╯ │
+╰─────────────┴───────────────────────────────────────────────────────────────────────────────────────────╯
+```
+
+### Send SUI or objects
+
+이 예제에서는 SUI를 전송하거나 object를 한 주소에서 다른 주소로 전송하는 방법을 살펴본다. 우선, SUI를 보내거나 object를 전송하는 데에는 `pay` 와 `transfer` 두 가지 주요 명령어가 있다. `pay` 와 `transfer` 각각 `pay-sui` , `pay-all-sui` , `transfer-sui` 와 같은 하위 명령어가 있다.
+
+이 두 명령어의 차이점은 다음과 같다:
+
+- `-sui` 로 끝나는 명령어는 Sui의 네이티브 코인과 관련이 있으며, 입력된 코인을 사용하여 가스 비용을 지불하거나 SUI 또는 object를 전송한다.
+- `pay-` 명령어는 일반적으로 코인을 다루고 가스 스매싱을 처리하는 반면, `transfer` 명령어는 공개 전송이 가능한 모든 object, 즉 `store` 기능을 가진 모든 object의 전송을 처리할 수 있다.
+- `pay` 명령어를 사용하면 여러 수신자에게 코인을 보낼 수 있지만, `transfer` 명령어는 수신자를 한 명으로만 지정할 수 있다.
+- `pay-all-sui` 는 스매싱 후 전체 잔액을 이체할 수 있는 방법을 제공하는 `pay-sui` 의 특별한 케이스이다.
+- `transfer-sui` 는 레거시 명령어이며, 금액을 지정하는지 여부에 따라 `pay-sui` 또는 `pay-all-sui` 로 완전히 대체되었다.
+
+주소가 두 개 있다고 가정해 본다:
+
+```sh
+╭───────────────────┬────────────────────────────────────────────────────────────────────┬────────────────╮
+│ alias             │ address                                                            │ active address │
+├───────────────────┼────────────────────────────────────────────────────────────────────┼────────────────┤
+│ hungry-spodumene  │ 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea │ *              │
+│ eloquent-amber    │ 0x3d78abc33ccd173c521b4f9e78b21ea2c989960b631732c539efaa38bda30976 │                │
+╰───────────────────┴────────────────────────────────────────────────────────────────────┴────────────────╯
+```
+
+주소 `hungry-spodumene`가 몇 개의 동전을 가지고 있다:
+
+```sh
+$ sui client gas hungry-spodumene
+```
+
+```sh
+╭────────────────────────────────────────────────────────────────────┬────────────────────┬──────────────────╮
+│ gasCoinId                                                          │ mistBalance (MIST) │ suiBalance (SUI) │
+├────────────────────────────────────────────────────────────────────┼────────────────────┼──────────────────┤
+│ 0x205972830acd8264a38b9a1776a1b72a1ae626fa23a4d1f12249349ce3b83c06 │ 200000000000       │ 200.00           │
+│ 0x56d76420a5bc7d356e3930e6a2ddc61cbbc0c87ea5c5f3cc3ac5952b4d52be5a │ 200000000000       │ 200.00           │
+│ 0xc9b447fff18f13fa035e028534b8344d5fc8a8760248fad10155e78f44dc3a52 │ 200000000000       │ 200.00           │
+│ 0xe373de9bdbd3dbd4f5f707f144c83af74a181cdb3903a953ee366f48e33865c7 │ 200000000000       │ 200.00           │
+│ 0xf7adb6aeb18eb409c03fe88cc31711b61a65333e0fdd88c1815d4ec75f713f31 │ 200000000000       │ 200.00           │
+╰────────────────────────────────────────────────────────────────────┴────────────────────┴──────────────────╯
+```
+
+`eloquent-amber` 에게 0.5 SUI를 보내려고 한다. 가스 코인이 여러 개 있다면 `pay`를 사용할 수 있다. 가스 코인이 하나만 있다면 `transfer-sui` 또는 `pay-sui` 사용하거나, 가스 요금 지불에 사용할 다른 코인을 만들기 위해 먼저 코인을 분할해야 한다. 이 경우에는 가스 요금 지불에 사용할 별도의 가스 코인을 제공할 필요가 없으므로 `pay-sui` 명령어를 사용한다. 아래 명령어에서 수신자는 `eloquent-amber` 로 지정하고, SUI를 전송할 코인과 전송할 SUI 금액을 지정한다.
+
+<importcontent source="info-gas-budget.mdx" mode="snippet"></importcontent>
+
+```sh
+$ sui client pay-sui --recipients eloquent-amber --input-coins 0xc9b447fff18f13fa035e028534b8344d5fc8a8760248fad10155e78f44dc3a52 --amounts 500000000 --gas-budget 5000000
+```
+
+결과는 다음과 같다:
+
+```sh
+Transaction Digest: AsWkciVhLHeCmqVipjjyAA7Hv5y87pFjHS59K8m4zBJV
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Transaction Data                                                                                             │
+├──────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Sender: 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea                                   │
+│ Gas Owner: 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea                                │
+│ Gas Budget: 5000000 MIST                                                                                     │
+│ Gas Price: 1000 MIST                                                                                         │
+│ Gas Payment:                                                                                                 │
+│  ┌──                                                                                                         │
+│  │ ID: 0xc9b447fff18f13fa035e028534b8344d5fc8a8760248fad10155e78f44dc3a52                                    │
+│  │ Version: 2                                                                                                │
+│  │ Digest: 9MEH7kr1YkBDx7pdUPCDnVb3FtPz9UZVeWmCot5Dhxqr                                                      │
+│  └──                                                                                                         │
+│                                                                                                              │
+│ Transaction Kind: Programmable                                                                               │
+│ ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────╮ │
+│ │ Input Objects                                                                                            │ │
+│ ├──────────────────────────────────────────────────────────────────────────────────────────────────────────┤ │
+│ │ 0   Pure Arg: Type: address, Value: "0x3d78abc33ccd173c521b4f9e78b21ea2c989960b631732c539efaa38bda30976" │ │
+│ │ 1   Pure Arg: Type: u64, Value: "500000000"                                                              │ │
+│ ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+│ ╭──────────────────────╮                                                                                     │
+│ │ Commands             │                                                                                     │
+│ ├──────────────────────┤                                                                                     │
+│ │ 0  SplitCoins:       │                                                                                     │
+│ │  ┌                   │                                                                                     │
+│ │  │ Coin: GasCoin     │                                                                                     │
+│ │  │ Amounts:          │                                                                                     │
+│ │  │   Input  1        │                                                                                     │
+│ │  └                   │                                                                                     │
+│ │                      │                                                                                     │
+│ │ 1  TransferObjects:  │                                                                                     │
+│ │  ┌                   │                                                                                     │
+│ │  │ Arguments:        │                                                                                     │
+│ │  │   Result 0        │                                                                                     │
+│ │  │ Address: Input  0 │                                                                                     │
+│ │  └                   │                                                                                     │
+│ ╰──────────────────────╯                                                                                     │
+│                                                                                                              │
+│ Signatures:                                                                                                  │
+│    eZc/iFO3i4Y8Le92zu9q75jILs+yg0sSXd1yPV9Dta+knH99VfkSCnzNQG1KbXSvY24wexmVtiuU6NkfudbiAQ==                  │
+│                                                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭───────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Transaction Effects                                                                               │
+├───────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Digest: AsWkciVhLHeCmqVipjjyAA7Hv5y87pFjHS59K8m4zBJV                                              │
+│ Status: Success                                                                                   │
+│ Executed Epoch: 0                                                                                 │
+│                                                                                                   │
+│ Created Objects:                                                                                  │
+│  ┌──                                                                                              │
+│  │ ID: 0xa031d3f8fd53b5f9885172e1c6bd8b770b25e42371c9ee215c6d4b21b2b73241                         │
+│  │ Owner: Account Address ( 0x3d78abc33ccd173c521b4f9e78b21ea2c989960b631732c539efaa38bda30976 )  │
+│  │ Version: 3                                                                                     │
+│  │ Digest: Fq3maqq3pShgKw58Ssm8cS2j1pspfhanedVK2MMxfQWQ                                           │
+│  └──                                                                                              │
+│ Mutated Objects:                                                                                  │
+│  ┌──                                                                                              │
+│  │ ID: 0xc9b447fff18f13fa035e028534b8344d5fc8a8760248fad10155e78f44dc3a52                         │
+│  │ Owner: Account Address ( 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea )  │
+│  │ Version: 3                                                                                     │
+│  │ Digest: GFB9mpxTP4z6CCShTbvD58FYxtu9G4mnxN3JtFeRupM3                                           │
+│  └──                                                                                              │
+│ Gas Object:                                                                                       │
+│  ┌──                                                                                              │
+│  │ ID: 0xc9b447fff18f13fa035e028534b8344d5fc8a8760248fad10155e78f44dc3a52                         │
+│  │ Owner: Account Address ( 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea )  │
+│  │ Version: 3                                                                                     │
+│  │ Digest: GFB9mpxTP4z6CCShTbvD58FYxtu9G4mnxN3JtFeRupM3                                           │
+│  └──                                                                                              │
+│ Gas Cost Summary:                                                                                 │
+│    Storage Cost: 1976000 MIST                                                                     │
+│    Computation Cost: 1000000 MIST                                                                 │
+│    Storage Rebate: 978120 MIST                                                                    │
+│    Non-refundable Storage Fee: 9880 MIST                                                          │
+│                                                                                                   │
+│ Transaction Dependencies:                                                                         │
+│    GThyjtRFysBgVppXDc9iduNPzB2bLteXBnJcBEYXz4vG                                                   │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭─────────────────────────────╮
+│ No transaction block events │
+╰─────────────────────────────╯
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Object Changes                                                                                   │
+├──────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Created Objects:                                                                                 │
+│  ┌──                                                                                             │
+│  │ ObjectID: 0xa031d3f8fd53b5f9885172e1c6bd8b770b25e42371c9ee215c6d4b21b2b73241                  │
+│  │ Sender: 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea                    │
+│  │ Owner: Account Address ( 0x3d78abc33ccd173c521b4f9e78b21ea2c989960b631732c539efaa38bda30976 ) │
+│  │ ObjectType: 0x2::coin::Coin<0x2::sui::SUI>                                                    │
+│  │ Version: 3                                                                                    │
+│  │ Digest: Fq3maqq3pShgKw58Ssm8cS2j1pspfhanedVK2MMxfQWQ                                          │
+│  └──                                                                                             │
+│ Mutated Objects:                                                                                 │
+│  ┌──                                                                                             │
+│  │ ObjectID: 0xc9b447fff18f13fa035e028534b8344d5fc8a8760248fad10155e78f44dc3a52                  │
+│  │ Sender: 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea                    │
+│  │ Owner: Account Address ( 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea ) │
+│  │ ObjectType: 0x2::coin::Coin<0x2::sui::SUI>                                                    │
+│  │ Version: 3                                                                                    │
+│  │ Digest: GFB9mpxTP4z6CCShTbvD58FYxtu9G4mnxN3JtFeRupM3                                          │
+│  └──                                                                                             │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────╯
+╭───────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Balance Changes                                                                                   │
+├───────────────────────────────────────────────────────────────────────────────────────────────────┤
+│  ┌──                                                                                              │
+│  │ Owner: Account Address ( 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea )  │
+│  │ CoinType: 0x2::sui::SUI                                                                        │
+│  │ Amount: -501997880                                                                             │
+│  └──                                                                                              │
+│  ┌──                                                                                              │
+│  │ Owner: Account Address ( 0x3d78abc33ccd173c521b4f9e78b21ea2c989960b631732c539efaa38bda30976 )  │
+│  │ CoinType: 0x2::sui::SUI                                                                        │
+│  │ Amount: 500000000                                                                              │
+│  └──                                                                                              │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+```
+
+`sui client gas <address>`를 사용하여 송신자와 수신자의 가스 잔액을 확인한다. 송신자는 사용된 가스 코인에 대해 199.49 SUI를 보유하게 되었다. 0.5 SUI가 이체되었고, 나머지 0.01 SUI는 가스 수수료로 지불되었다.
+
+```sh
+$ sui client gas
+```
+
+```sh
+╭────────────────────────────────────────────────────────────────────┬────────────────────┬──────────────────╮
+│ gasCoinId                                                          │ mistBalance (MIST) │ suiBalance (SUI) │
+├────────────────────────────────────────────────────────────────────┼────────────────────┼──────────────────┤
+│ 0x205972830acd8264a38b9a1776a1b72a1ae626fa23a4d1f12249349ce3b83c06 │ 200000000000       │ 200.00           │
+│ 0x56d76420a5bc7d356e3930e6a2ddc61cbbc0c87ea5c5f3cc3ac5952b4d52be5a │ 200000000000       │ 200.00           │
+│ 0xc9b447fff18f13fa035e028534b8344d5fc8a8760248fad10155e78f44dc3a52 │ 199498002120       │ 199.49           │
+│ 0xe373de9bdbd3dbd4f5f707f144c83af74a181cdb3903a953ee366f48e33865c7 │ 200000000000       │ 200.00           │
+│ 0xf7adb6aeb18eb409c03fe88cc31711b61a65333e0fdd88c1815d4ec75f713f31 │ 200000000000       │ 200.00           │
+╰────────────────────────────────────────────────────────────────────┴────────────────────┴──────────────────╯
+```
+
+```sh
+$ sui client gas eloquent-amber
+```
+
+```sh
+╭────────────────────────────────────────────────────────────────────┬────────────────────┬──────────────────╮
+│ gasCoinId                                                          │ mistBalance (MIST) │ suiBalance (SUI) │
+├────────────────────────────────────────────────────────────────────┼────────────────────┼──────────────────┤
+│ 0xa031d3f8fd53b5f9885172e1c6bd8b770b25e42371c9ee215c6d4b21b2b73241 │ 500000000          │ 0.50             │
+╰────────────────────────────────────────────────────────────────────┴────────────────────┴──────────────────╯
+```
+
+전체 object를 전송하려면 `sui client pay-all-sui` 또는 `sui client transfer-sui` (금액을 전달하지 않고) 명령어를 사용할 수 있다.
+
+```sh
+$ sui client pay-sui --recipient eloquent-amber --input-coins 0xc9b447fff18f13fa035e028534b8344d5fc8a8760248fad10155e78f44dc3a52 --gas-budget 5000000
+```
+
+또는
+
+```sh
+$ sui client transfer-sui --to eloquent-amber --sui-coin-object-id 0xc9b447fff18f13fa035e028534b8344d5fc8a8760248fad10155e78f44dc3a52 --gas-budget 5000000
+```
+
+그런 다음 가스에서 `eloquent-amber`가 다시 나타나는지 확인한다:
+
+```sh
+$ sui client gas eloquent-amber
+```
+
+```sh
+╭────────────────────────────────────────────────────────────────────┬────────────────────┬──────────────────╮
+│ gasCoinId                                                          │ mistBalance (MIST) │ suiBalance (SUI) │
+├────────────────────────────────────────────────────────────────────┼────────────────────┼──────────────────┤
+│ 0xa031d3f8fd53b5f9885172e1c6bd8b770b25e42371c9ee215c6d4b21b2b73241 │ 500000000          │ 0.50             │
+│ 0xc9b447fff18f13fa035e028534b8344d5fc8a8760248fad10155e78f44dc3a52 │ 199496992240       │ 199.49           │
+╰────────────────────────────────────────────────────────────────────┴────────────────────┴──────────────────╯
+```
+
+### Replay a transaction
+
+`sui client replay-transaction --tx-digest <TRANSACTION-DIGEST>` 명령어를 사용하여 transaction을 로컬에서 다시 실행하고 transaction의 영향을 확인할 수 있다. 이 명령어는 클라이언트 환경 변수에 지정된 풀 노드에서 transaction 종속성을 가져온다. 오래전에 발생한 transaction의 경우, 해당 transaction에 대한 체인 데이터가 삭제되지 않은 풀 노드를 클라이언트 풀 노드로 설정하는 것이 좋다. 이렇게 하면 로컬에서 실행된 transaction의 결과가 온체인에 저장된 transaction의 결과와 일치하는지 확인할 수 있다.
+
+```sh
+$ sui client replay-transaction --tx-digest 51MzJP2Uesvza8vXGpPCGbfLrY6UCfdvdoErN1z4oXPW
+```
+
+transaction 재생 및 디버깅 또는 프로파일링에 transaction을 활용하는 방법에 대한 자세한 내용은 [Transaction Replay](./replay.mdx) , [Debugging Transactions](../ide/debugger.mdx) 및 [Transaction Trace Analysis](./trace-analysis.mdx) 가이드를 참조바란다.
+
+## Publish a Move package
+
+`sui client` 명령어의 주요 용도 중 하나는 Sui 네트워크에 스마트컨트랙트를 게시하는 것이다. 이 예제에서는 현재 환경을 데브넷 네트워크로 전환한 다음, Sui 저장소 에 있는 기존 Move 예제 중 하나를 빌드, 테스트 및 게시한다: [sui/examples/move](https://github.com/MystenLabs/sui/tree/main/examples/move)
+
+이 예제에서는 `sui move` 명령어를 사용한다. 해당 명령어에 대한 자세한 내용은 [Sui Move CLI를](./move.mdx) 참조바란다:
+
+1. 터미널이나 콘솔을 열고 로컬 Sui 저장소의 루트 디렉터리로 이동한 다음 `move_tutorial` 예제 파일로 이동한다.
+    ```sh
+    $ cd examples/move/first_package
+    ```
+2. 데브넷 네트워크로 전환한다. 이 명령은 별칭을 사용하므로 구성에 설정된 별칭 이름에 따라 `devnet` 값이 다를 수 있다(정의된 네트워크 및 해당 별칭 목록을 보려면 `sui client envs`를 사용한다).
+    ```sh
+    $ sui client switch --env devnet
+    ```
+3. 패키지를 빌드하려면 `sui move build` 명령어를 사용한다. 이 명령어는 패키지 매니페스트 파일( [Move.toml](https://move-book.com/concepts/manifest.html) )과 동일한 레벨에서 실행해야 한다.
+    ```sh
+    $ sui move build
+    ```
+    콘솔에 빌드 상태가 표시된다.
+    ```sh
+    INCLUDING DEPENDENCY Sui
+    INCLUDING DEPENDENCY MoveStdlib
+    BUILDING first_package
+    ```
+4. `sui move test` 사용하여 유닛 테스트를 실행한다.
+    ```sh
+    $ sui move test
+    ```
+    콘솔은 진행 상황에 대한 업데이트를 표시한다.
+    ```sh
+    INCLUDING DEPENDENCY Sui
+    INCLUDING DEPENDENCY MoveStdlib
+    BUILDING first_package
+    Running Move unit tests
+    [ PASS    ] 0x0::example::test_module_init
+    [ PASS    ] 0x0::example::test_sword_transactions
+    Test result: OK. Total tests: 2; passed: 2; failed: 0
+    ```
+5. `sui client verify-bytecode-meter`를 사용하여 모듈이 바이트코드 측정 테스트를 통과하는지 확인한다.
+    ```sh
+    $ sui client verify-bytecode-meter
+    ```
+    콘솔에는 허용되는 최대값과 패키지가 사용하는 양이 표시된다.
+    ```sh
+    Running bytecode verifier for 1 modules
+    ╭──────────────────────────────────╮
+    │ Module passes metering check. │
+    ├────────┬────────────┬────────────┤
+    │        │ Module     │ Function   │
+    │ Max    │ 16000000   │ 16000000   │
+    │ Used   │ 4565       │ 4565       │
+    ╰────────┴────────────┴────────────╯
+    ```
+6. `sui client gas`를 사용하여 활성 주소에 가스 요금 지불에 필요한 가스 코인이 있는지 확인한다.
+    ```sh
+    $ sui client gas
+    ```
+    이 예시의 경우, 콘솔은 해당 주소에 코인이 없다는 정보를 표시한다.
+    ```sh
+    No gas coins are owned by this address
+    ```
+7. 코인이 필요한 경우, `sui client faucet` (메인넷에서는 사용 불가)를 이용한다. 가스 토큰 획득에 대한 자세한 내용은 [Get Sui Token](/guides/developer/getting-started/get-coins.mdx)를 참조바란다.
+    ```sh
+    $ sui client faucet
+    ```
+8. `sui client gas`를 사용하여 현재 활성화된 주소가 코인을 수신했는지 확인한다.
+    ```sh
+    $ sui client gas
+    ```
+    ```sh
+    ╭────────────────────────────────────────────────────────────────────┬─────────────╮
+    │ gasCoinId                                                          │ gasBalance  │
+    ├────────────────────────────────────────────────────────────────────┼─────────────┤
+    │ 0x01b2795ba5800c8f7cb7d7c56abe19e24c656ed6764f3ccc5e66da3de52402a8 │ 10000000000 │
+    ╰────────────────────────────────────────────────────────────────────┴─────────────╯
+    ```
+9. 패키지를 게시하려면 `sui client publish`를 사용한다. Sui 구버전을 사용하는 경우 `gas-budget` 플래그에 적절한 값을 설정해야 한다. 콘솔에 게시 세부 정보가 표시된다. `sui client object <OBJECT-ID>`를 사용하여 프로세스의 object 세부 정보를 확인할 수 있다.
+    ```sh
+    $ sui client publish --gas-budget 100000000 .
+    ```
+    ```sh
+     Transaction Digest: ABPd7v8BxLkcyHvX8Jt1SbneQRwzE9WzcEoptT2RDNVF
+    ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+    │ Transaction Data                                                                                             │
+    ├──────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+    │ Sender: 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea                                   │
+    │ Gas Owner: 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea                                │
+    │ Gas Budget: 5000000000 MIST                                                                                  │
+    │ Gas Price: 1000 MIST                                                                                         │
+    │ Gas Payment:                                                                                                 │
+    │  ┌──                                                                                                         │
+    │  │ ID: 0x01b2795ba5800c8f7cb7d7c56abe19e24c656ed6764f3ccc5e66da3de52402a8                                    │
+    │  │ Version: 2                                                                                                │
+    │  │ Digest: GZQwvpxLeTciVboEWeC8EZ2KYYU9o6XoBtW6LrA5Si1h                                                      │
+    │  └──                                                                                                         │
+    │                                                                                                              │
+    │ Transaction Kind: Programmable                                                                               │
+    │ ╭──────────────────────────────────────────────────────────────────────────────────────────────────────────╮ │
+    │ │ Input Objects                                                                                            │ │
+    │ ├──────────────────────────────────────────────────────────────────────────────────────────────────────────┤ │
+    │ │ 0   Pure Arg: Type: address, Value: "0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea" │ │
+    │ ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+    │ ╭─────────────────────────────────────────────────────────────────────────╮                                  │
+    │ │ Commands                                                                │                                  │
+    │ ├─────────────────────────────────────────────────────────────────────────┤                                  │
+    │ │ 0  Publish:                                                             │                                  │
+    │ │  ┌                                                                      │                                  │
+    │ │  │ Dependencies:                                                        │                                  │
+    │ │  │   0x0000000000000000000000000000000000000000000000000000000000000001 │                                  │
+    │ │  │   0x0000000000000000000000000000000000000000000000000000000000000002 │                                  │
+    │ │  └                                                                      │                                  │
+    │ │                                                                         │                                  │
+    │ │ 1  TransferObjects:                                                     │                                  │
+    │ │  ┌                                                                      │                                  │
+    │ │  │ Arguments:                                                           │                                  │
+    │ │  │   Result 0                                                           │                                  │
+    │ │  │ Address: Input  0                                                    │                                  │
+    │ │  └                                                                      │                                  │
+    │ ╰─────────────────────────────────────────────────────────────────────────╯                                  │
+    │                                                                                                              │
+    │ Signatures:                                                                                                  │
+    │    x437h/JxDAba2zkx4a2kEfz6iaXQ08T7+inyP5YkbmlSB5K7IYasM6onckjYDB19FNM1ZNqXm1z13VyTmDHXCw==                  │
+    │                                                                                                              │
+    ╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+    ╭───────────────────────────────────────────────────────────────────────────────────────────────────╮
+    │ Transaction Effects                                                                               │
+    ├───────────────────────────────────────────────────────────────────────────────────────────────────┤
+    │ Digest: ABPd7v8BxLkcyHvX8Jt1SbneQRwzE9WzcEoptT2RDNVF                                              │
+    │ Status: Success                                                                                   │
+    │ Executed Epoch: 0                                                                                 │
+    │                                                                                                   │
+    │ Created Objects:                                                                                  │
+    │  ┌──                                                                                              │
+    │  │ ID: 0x569828cc4e134ccccd7408def18b80af1465ac791fd4ef40483f6b16e2f00d95                         │
+    │  │ Owner: Account Address ( 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea )  │
+    │  │ Version: 3                                                                                     │
+    │  │ Digest: 4iD7ZhsFS9iFuszqxBSEL6xZdcnWG76WGgU4D5PH1PeL                                           │
+    │  └──                                                                                              │
+    │  ┌──                                                                                              │
+    │  │ ID: 0xde670ae990c8f20fd53e9f597a0da056bdb634175176602658e9da2c2ec9cb93                         │
+    │  │ Owner: Account Address ( 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea )  │
+    │  │ Version: 3                                                                                     │
+    │  │ Digest: AV27tn7ePXhdDyDV9TCkSQZA3mkMei9DV63AmB4DEjGN                                           │
+    │  └──                                                                                              │
+    │  ┌──                                                                                              │
+    │  │ ID: 0xe1d9d66b7a19b27ebda338a52593cd10e728f666f34ecd30a7cc2ad3fed186da                         │
+    │  │ Owner: Immutable                                                                               │
+    │  │ Version: 1                                                                                     │
+    │  │ Digest: 4bzxMQgcSZoKzppNiRtQwAWDBvCgjr18gQi2H8Yk1tQZ                                           │
+    │  └──                                                                                              │
+    │ Mutated Objects:                                                                                  │
+    │  ┌──                                                                                              │
+    │  │ ID: 0x01b2795ba5800c8f7cb7d7c56abe19e24c656ed6764f3ccc5e66da3de52402a8                         │
+    │  │ Owner: Account Address ( 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea )  │
+    │  │ Version: 3                                                                                     │
+    │  │ Digest: 46rvdbXkw5qqsBYbUGChzgFatJAYPmarPmFHgRRJiiU9                                           │
+    │  └──                                                                                              │
+    │ Gas Object:                                                                                       │
+    │  ┌──                                                                                              │
+    │  │ ID: 0x01b2795ba5800c8f7cb7d7c56abe19e24c656ed6764f3ccc5e66da3de52402a8                         │
+    │  │ Owner: Account Address ( 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea )  │
+    │  │ Version: 3                                                                                     │
+    │  │ Digest: 46rvdbXkw5qqsBYbUGChzgFatJAYPmarPmFHgRRJiiU9                                           │
+    │  └──                                                                                              │
+    │ Gas Cost Summary:                                                                                 │
+    │    Storage Cost: 9978800                                                                          │
+    │    Computation Cost: 1000000                                                                      │
+    │    Storage Rebate: 978120                                                                         │
+    │    Non-refundable Storage Fee: 9880                                                               │
+    │                                                                                                   │
+    │ Transaction Dependencies:                                                                         │
+    │    891Qjq6qDZ6SzAJiAg3CEaHobXrpDL5bAy2o45ZJPTuB                                                   │
+    │    ESHcS3y3VCuaCVmWkKDx3EXX3icfPtj4bHhk86gaGWdo                                                   │
+    ╰───────────────────────────────────────────────────────────────────────────────────────────────────╯
+    ╭─────────────────────────────╮
+    │ No transaction block events │
+    ╰─────────────────────────────╯
+    ╭────────────────────────────────────────────────────────────────────────────────────────────────────╮
+    │ Object Changes                                                                                     │
+    ├────────────────────────────────────────────────────────────────────────────────────────────────────┤
+    │ Created Objects:                                                                                   │
+    │  ┌──                                                                                               │
+    │  │ ObjectID: 0x569828cc4e134ccccd7408def18b80af1465ac791fd4ef40483f6b16e2f00d95                    │
+    │  │ Sender: 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea                      │
+    │  │ Owner: Account Address ( 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea )   │
+    │  │ ObjectType: 0xe1d9d66b7a19b27ebda338a52593cd10e728f666f34ecd30a7cc2ad3fed186da::example::Forge  │
+    │  │ Version: 3                                                                                      │
+    │  │ Digest: 4iD7ZhsFS9iFuszqxBSEL6xZdcnWG76WGgU4D5PH1PeL                                            │
+    │  └──                                                                                               │
+    │  ┌──                                                                                               │
+    │  │ ObjectID: 0xde670ae990c8f20fd53e9f597a0da056bdb634175176602658e9da2c2ec9cb93                    │
+    │  │ Sender: 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea                      │
+    │  │ Owner: Account Address ( 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea )   │
+    │  │ ObjectType: 0x2::package::UpgradeCap                                                            │
+    │  │ Version: 3                                                                                      │
+    │  │ Digest: AV27tn7ePXhdDyDV9TCkSQZA3mkMei9DV63AmB4DEjGN                                            │
+    │  └──                                                                                               │
+    │ Mutated Objects:                                                                                   │
+    │  ┌──                                                                                               │
+    │  │ ObjectID: 0x01b2795ba5800c8f7cb7d7c56abe19e24c656ed6764f3ccc5e66da3de52402a8                    │
+    │  │ Sender: 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea                      │
+    │  │ Owner: Account Address ( 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea )   │
+    │  │ ObjectType: 0x2::coin::Coin<0x2::sui::SUI>                                                      │
+    │  │ Version: 3                                                                                      │
+    │  │ Digest: 46rvdbXkw5qqsBYbUGChzgFatJAYPmarPmFHgRRJiiU9                                            │
+    │  └──                                                                                               │
+    │ Published Objects:                                                                                 │
+    │  ┌──                                                                                               │
+    │  │ PackageID: 0xe1d9d66b7a19b27ebda338a52593cd10e728f666f34ecd30a7cc2ad3fed186da                   │
+    │  │ Version: 1                                                                                      │
+    │  │ Digest: 4bzxMQgcSZoKzppNiRtQwAWDBvCgjr18gQi2H8Yk1tQZ                                            │
+    │  │ Modules: example                                                                                │
+    │  └──                                                                                               │
+    ╰────────────────────────────────────────────────────────────────────────────────────────────────────╯
+    ╭───────────────────────────────────────────────────────────────────────────────────────────────────╮
+    │ Balance Changes                                                                                   │
+    ├───────────────────────────────────────────────────────────────────────────────────────────────────┤
+    │  ┌──                                                                                              │
+    │  │ Owner: Account Address ( 0x0fe375fff0ee40d20c54a7f2478b9b5c7eaa3625b7611f9661ec5faefb4a6fea )  │
+    │  │ CoinType: 0x2::sui::SUI                                                                        │
+    │  │ Amount: -10000680                                                                              │
+    │  └──                                                                                              │
+    ╰───────────────────────────────────────────────────────────────────────────────────────────────────╯
+    ```
+
+## Help
+
+각 명령어에는 자체 도움말 섹션이 있다. 예를 들어, `sui client call --help` 입력하면 다음과 같은 메시지가 표시된다:
+
+```sh
+Call Move function
+
+Usage: sui client call [OPTIONS] --package <PACKAGE> --module <MODULE> --function <FUNCTION>
+
+Options:
+      --package <PACKAGE>               Object ID of the package, which contains the module
+      --module <MODULE>                 The name of the module in the package
+      --function <FUNCTION>             Function name in module
+      --type-args <TYPE_ARGS>...        Type arguments to the generic function being called. All must be specified, or the call will fail
+      --args <ARGS>...                  Simplified ordered args like in the function syntax ObjectIDs, Addresses must be hex strings
+      --gas <GAS>                       ID of the gas object for gas payment. If not provided, a gas object with at least gas_budget value will be selected
+      --gas-budget <GAS_BUDGET>         An optional gas budget for this transaction (in MIST). If gas budget is not provided, the tool will first perform a dry
+                                        run to estimate the gas cost, and then it will execute the transaction. Please note that this incurs a small cost in
+                                        performance due to the additional dry run call
+      --dry-run                         Perform a dry run of the transaction, without executing it
+      --dev-inspect                     Perform a dev inspect
+      --serialize-unsigned-transaction  Instead of executing the transaction, serialize the bcs bytes of the unsigned transaction data (TransactionData) using
+                                        base64 encoding, and print out the string <TX_BYTES>. The string can be used to execute transaction with `sui client
+                                        execute-signed-tx --tx-bytes <TX_BYTES>`
+      --serialize-signed-transaction    Instead of executing the transaction, serialize the bcs bytes of the signed transaction data (SenderSignedData) using
+                                        base64 encoding, and print out the string <SIGNED_TX_BYTES>. The string can be used to execute transaction with `sui
+                                        client execute-combined-signed-tx --signed-tx-bytes <SIGNED_TX_BYTES>`
+      --json                            Return command outputs in json format
+  -h, --help                            Print help
+  -V, --version                         Print version
+```

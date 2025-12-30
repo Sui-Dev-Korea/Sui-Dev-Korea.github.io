@@ -1,0 +1,28 @@
+---
+title: Epochs and Reconfiguration
+draft: 'true'
+---
+
+간단히 보면, epoch는 Sui Network에서 달력의 개별 날짜와 같은 역할을 한다. 재구성(Reconfiguration)은 각 epoch이 끝날 때 그날의 활동을 집계하고 다음 날의 매개변수를 설정하는 과정이다.
+
+## Epoch
+
+Epoch은 Sui validator 구성과 그들의 stake가 변하지 않는 단위 시간이다. mainnet과 testnet 모두 epoch은 약 24시간이다. 이 기간 동안 validator는 epoch 중간에 임시 validator 변경을 걱정하지 않고 효율적으로 Transaction을 처리할 수 있다.
+
+Epoch 값은 Sui Network의 Transaction metadata에 포함되지만, 일반 사용자는 그 값에 영향을 받지 않는다. 사용자가 epoch을 알아야 하는 유일한 경우는 Transaction 만료인데, 이때 Transaction은 설정된 epoch 이전에 실행되는 경우에만 유효하다. Sui의 Transaction에 대한 자세한 정보는 [Transactions](../transactions.mdx)를 참조하라.
+
+## Reconfiguration
+
+재구성(Reconfiguration)은 각 epoch 종료 시 발생하는 중요한 프로세스이다. 이는 다가오는 epoch에 맞추어 네트워크를 조정하기 위한 여러 주요 단계를 포함한다.
+
+1. **Transactions 및 checkpoints 확정**
+    - 네트워크는 현재 epoch의 최종 Transaction 및 checkpoint 집합에 대한 합의를 도출한다. 이를 통해 모든 validator가 epoch 종료 시 동일한 상태를 갖도록 보장한다.
+    - **동기적 순간:** 이는 네트워크에서 유일하게 완전히 동기적인 이벤트이며, 일관성을 유지하는 데 중요하다.
+2. **Gas 보상 분배**
+    - Computation gas 수수료는 validator staking 보상 풀에 분배되며, staker는 이곳에서 인출할 수 있다.
+    - Storage 수수료는 storage fund에 할당되며, 이는 [Tokenomics](../tokenomics.mdx)에서 설명하듯 Sui tokenomics에서 중요한 역할을 한다.
+3. **Validator 구성 변경**
+    - Epoch 동안 보류 중이던 staking 및 unstaking 요청은 최종 확정되어 validator의 stake 분배에 반영된다.
+    - 보류 중이던 새로운 validator 추가 및 기존 validator 제거를 포함한 validator 변경 요청도 처리된다. 이는 validator set과 stake 분배를 변경할 수 있는 유일한 기회이다.
+4. **Protocol upgrade**
+    - 만약 2f+1 validator가 동의한다면, 네트워크는 새로운 기능, 버그 수정 및 Move framework 라이브러리 업데이트를 포함하는 새로운 프로토콜 버전으로 업그레이드될 수 있다.

@@ -1,0 +1,104 @@
+---
+title: Signatures
+description: Sui는 여러 cryptography 알고리즘과 primitive를 지원하며, 이들 간의 빠른 전환이 지원된다.
+keywords:
+  - Ed25519 pure
+  - pure Ed255190
+  - ECDSA Secp256k1
+  - ECDSA Secp256r1
+  - multisig
+  - zkLogin
+  - passkey
+  - signature requirements
+  - signature authority
+  - authority signature
+  - account key pair
+  - account key pair
+  - network key pair
+---
+
+사용자가 서명된 transaction을 제출하면, 직렬화된 서명과 직렬화된 transaction data가 함께 제출된다. 직렬화된 transaction data는 struct `TransactionData`의 BCS 직렬화된 바이트이며, 직렬화된 서명은 `flag || sig || pk` 바이트의 연결로 정의된다.
+
+`flag`는 서명자가 선택한 서명 방식에 대응하는 1바이트 표현이다. 아래 표는 각 서명 방식과 그에 대응하는 flag 값을 보여준다:
+
+Scheme | Flag
+--- | ---
+Pure Ed25519 | 0x00
+ECDSA Secp256k1 | 0x01
+ECDSA Secp256r1 | 0x02
+multisig | 0x03
+zkLogin | 0x05
+passkey | 0x06
+
+`sig` 바이트는 DER 인코딩 대신, 서명의 압축된 바이트 표현이다. 아래 표는 각 형식의 예상 크기를 보여준다:
+
+Scheme | Signature
+--- | ---
+Pure Ed25519 | Compressed, 64바이트
+ECDSA Secp256k1 | Non-recoverable, compressed, 64바이트
+ECDSA Secp256r1 | Non-recoverable, compressed, 64바이트
+multisig | 모든 서명 BCS로 직렬화, 크기 가변적
+zkLogin | BCS로 직렬화된 zkLogin 입력값, max epoch 및 ephemeral 서명, 크기 가변적
+passkey | BCS로 직렬화된 passkey 입력값(authenticatorData, clientDataJson, userSignature), 크기 가변적
+
+`pk` 바이트는 해당 서명에 대응하는 공개 키의 바이트 표현이다.
+
+Scheme | Public key
+--- | ---
+Pure Ed25519 | compressed, 32바이트
+ECDSA Secp256k1 | compressed, 33바이트
+ECDSA Secp256r1 | compressed, 33바이트
+multisig | 모든 참여 public key BCS 직렬화, 크기 가변적
+zkLogin | iss 길이, iss 바이트, 32바이트로 패딩된 address seed의 연결, 크기 가변적
+passkey | Compressed, 33바이트
+
+## Signature requirements {#signature-requirements}
+
+서명은 transaction data의 intent message 해시에 커밋해야 하며, 이는 BCS로 직렬화된 transaction data 앞에 3바이트 intent를 덧붙여 구성할 수 있다. Intent의 개념과 intent message 구성 방법에 대한 자세한 내용은 [Sui Intent Signing](intent-signing.mdx)을 참고한다.
+
+서명 API를 호출할 때는 먼저 Blake2b를 사용하여 transaction data의 intent message를 32바이트로 해시해야 한다. 이 외부 해싱은 signing API 내부에서 수행되는 해싱과는 구별된다. 기존 표준 및 하드웨어 보안 모듈(HSM)과의 호환성을 위해, signing 알고리즘은 내부적으로 추가 해싱을 수행한다. ECDSA Secp256k1과 Secp256r1의 경우 내부 해시 함수로 SHA-2 SHA256을 사용해야 하며, pure Ed25519의 경우 SHA-512를 사용해야 한다.
+
+유효한 ECDSA Secp256k1 및 Secp256r1 서명은 다음을 따라야 한다:
+
+1. ECDSA에서 사용되는 내부 해시는 transaction data의 SHA256 [SHA-2](https://en.wikipedia.org/wiki/SHA-2) 해시여야 한다. Sui는 SHA256을 사용하는데 이는 [Apple](https://developer.apple.com/forums/thread/89619), HSM, 및 [cloud](https://developer.apple.com/forums/thread/89619)에서 지원되고, [Bitcoin](https://en.bitcoin.it/wiki/Elliptic_Curve_Digital_Signature_Algorithm)에서 널리 채택되어 있기 때문이다.
+2. 서명은 길이 64바이트의 `[r, s]` 형식이어야 하며, 처음 32바이트는 `r`, 두 번째 32바이트는 `s`이다.
+3. `r` 값은 `0x1` 이상 `0xFFFFFFFF FFFFFFFF FFFFFFFF FFFFFFFE BAAEDCE6 AF48A03B BFD25E8C D0364140` 이하이다. (inclusive)
+4. `s` 값은 곡선 차수의 하위 절반에 있어야 한다. 서명이 너무 큰 경우, 해당 곡선 차수에 따라 [BIP-0062](https://github.com/bitcoin/bips/blob/master/bip-0062.mediawiki#low-s-values-in-signatures)에 정의된 방식으로 `order - s`를 사용하여 더 낮은 `s`로 변환한다. Secp256k1의 곡선 차수는 `0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141`이고, Secp256r1의 곡선 차수는 [Standards for Efficient Cryptography](https://secg.org/SEC2-Ver-1.0.pdf)에 정의된 `0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551`이다.
+5. 이상적으로, 서명은 [RFC6979](https://www.rfc-editor.org/rfc/rfc6979)에 따라 결정적 논스로 생성되어야 한다.
+
+유효한 pure Ed25519 서명은 다음을 따라야 한다:
+
+1. 서명은 [RFC 8032](https://www.rfc-editor.org/rfc/rfc8032.html#section-5.1.6)에 따라 생성되어야 한다. 내부적으로 사용되는 해시는 SHA-512이다.
+2. 서명은 [ZIP215](https://github.com/zcash/zips/blob/main/zip-0215.rst)에 따라 유효해야 한다.
+
+CLI를 사용한 오프라인 서명의 구체적 예시는 [Offline Signing](../transaction-auth/offline-signing.mdx) 항목에서 확인할 수 있다.
+
+ZkLogin signature 관련 내용은 [zkLogin](../zklogin.mdx)을 참고한다.
+
+Passkey signature에 대한 자세한 내용은 [SIP-8](https://github.com/sui-foundation/sips/blob/main/sips/sip-9.md)을 참고한다.
+
+## Authority signature
+
+Sui의 Authority(validator 집합)는 각기 다른 세 가지 키 쌍을 보유한다:
+
+1. [Protocol key pair](#protocol-pair)
+2. [Account key pair](#account-pair)
+3. [Network key pair](#network-pair)
+
+### Protocol key pair {#protocol-pair}
+
+프로토콜 키 쌍은 검증이 완료된 사용자 서명 transaction에 대해 권한 서명을 제공한다. 사용자 transaction에 서명을 제공한 권한 주체들의 stake가 필요한 3분의 2 임계값을 초과하면, Sui는 해당 transaction을 실행한다. Sui는 일정 수의 권한 주체들에 대한 집계된 서명의 빠른 검증을 위해 BLS12381 방식을 사용한다. 특히 Sui는 minSig BLS 모드를 사용하는데, 이때 각 개별 공개 키는 96바이트이고, 서명은 48바이트이다. 후자는 일반적으로 validator가 각 epoch 시작 시 한 번 키를 등록한 후 지속적으로 transaction에 서명을 제공하기 때문에 중요하며, 따라서 우리는 서명 크기를 최소화하도록 최적화한다.
+
+BLS scheme과 마찬가지로, 독립적인 서명들을 집계하여 단일 BLS 서명 payload를 생성할 수 있다. Sui는 또한 어떤 validator가 서명했는지를 나타내는 bitmap과 함께, 집계된 서명을 함께 제공한다. 이는 실질적으로 검증 권한자의 서명 크기를 (2f + 1) × `BLS_sig` 크기에서 단 하나의 `BLS_sig` payload로 줄이며, 그 결과 validator 집합의 크기와 관계없이 transaction certificate가 압축되어 네트워크 비용 측면에서 상당한 이점을 가져온다.
+
+BLS12381 방식의 집계된 서명에 대한 잠재적인 rogue key 공격을 방지하기 위해, 권한 주체 등록 시 비밀 키의 지식 증명(KOSK, proof of knowledge of the secret key)이 사용된다. 권한 주체가 validator 집합에 추가되기를 요청할 때, 소유증명이 제출되어 검증된다. 소유 증명 생성 방법에 대한 내용은 [Intent Signing](../transaction-auth/intent-signing.mdx)을 참고한다. 대부분의 표준과 달리, Sui의 proof of knowledge scheme은 address에도 커밋하며, 이를 통해 다른 악의적인 validator가 validator의 BLS 키를 재사용하는 공격에 대해 추가적인 보호를 제공한다.
+
+### Account key pair {#account-pair}
+
+권한주체가 staking 보상을 수령하기 위해 사용하는 계정은 계정 키 쌍으로 보호된다. Sui는 서명 방식으로 pure Ed25519를 사용한다.
+
+### Network key pair {#network-pair}
+
+비밀 키는 합의 네트워킹에 필요한 TLS handshake를 수행하는 데 사용된다. 공개 키는 validator의 신원 식별에 사용된다. 이 방식으로 pure Ed25519가 사용된다.
+
+권한 주체 키 관련 도구에 대한 자세한 내용은 [Validator Tool](https://github.com/MystenLabs/sui/blob/f8b5ad9aaecc3c4b30a060ec5e00bdad9ba75a93/nre/validator_tool.md)을 참고한다.

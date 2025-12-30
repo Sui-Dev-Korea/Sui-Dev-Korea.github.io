@@ -1,0 +1,38 @@
+---
+title: Consensus
+sidebar_label: Consensus
+description: Sui 합의 메커니즘의 개요
+---
+
+블록체인에서 합의의 목적은 일관된 순서에 합의하고 transaction의 가용성을 보장하는 것이다.
+
+Sui에서 합의는 직관적인 API를 가진다. validator들은 병렬적으로 서로 다른 사용자 transaction을 합의에 제출한다. 합의는 올바르게 동작하는 모든 validator 전반에 일관된 transaction 스트림을 제공한다.
+
+Sui는 낮은 지연 시간과 높은 처리량을 동시에 최적화하기 위해 Mysticeti 프로토콜을 사용한다. Mysticeti는 다음과 같은 이점을 제공한다:
+
+- 여러 validator가 병렬로 블록을 제안하도록 지원하여 네트워크의 전체 대역폭을 활용하고 검열 저항성을 제공한다. 이는 DAG 기반 합의 프로토콜의 특징이다.
+- DAG에서 블록을 커밋하기 위해 단지 세 라운드의 메시지만 필요로 한다. 이는 실제 Byzantine Fault Tolerance와 동일하며 이론적 최소치와 일치한다.
+- 블록에 대한 투표와 leader 인증을 병렬로 수행할 수 있어 중간 지연과 꼬리 지연 시간을 줄인다.
+- leader가 사용 불가능하더라도 커밋 지연을 크게 증가시키지 않고 허용한다.
+
+## Transaction throughput
+
+다른 최신 합의 프로토콜과 비교하여, Mysticeti는 이론적으로 관측된 지연의 절반으로 두 배가 넘는 transaction을 처리할 수 있다. 10개의 노드를 사용하는 통제된 환경에서, Mysticeti는 지연이 1초 표시를 넘기기 전에 초당 300,000건(TPS)의 transaction을 처리한다. 50개의 노드에서는, 지연이 1초를 초과하기 전에 400,000 TPS를 보여 준다는 테스트 결과가 있다. 동일한 테스트에서, 다른 최고 성능의 합의 메커니즘은 150,000 TPS에 도달하지 못하며 관측된 지연은 약 2초부터 시작한다.
+
+평균적으로, 테스트는 Mysticeti가 약 **0.5초**에 합의 커밋에 도달하며 지속적인 **200,000 TPS**의 처리량을 유지하는 것을 보여 준다.
+
+![Throughput and latency graph](./images/thruput_latency.png)
+
+## Decision rule
+
+Mysticeti의 핵심에 있는 의사결정 규칙은 운영 효율성을 최적화한다. 전통적인 합의 의사결정 규칙은 명시적인 블록 검증과 인증을 요구한다. 이 과정은 validator들이 합의에 도달하기 위해 투표에 서명하고 이를 전파해야 하므로 통신 오버헤드를 증가시킨다. 대조적으로, Mysticeti는 암묵적 커밋(Implicit commitment)을 제공하여 노드 간 통신을 줄이고 대역폭 사용량을 낮춘다.
+
+## Finality
+
+확정성은 transaction 또는 블록이 확인된 후 네트워크에 영구히 추가되어 변경되거나 되돌릴 수 없다는 보장이다. 전통적인 블록체인 합의에서는, transaction이 확정으로 간주되기 전에 다른 transaction이 그것을 참조하도록 의존하기 때문에 확인에 시간이 걸릴 수 있다. 이 과정은 네트워크 활동이 감소하거나 경쟁하는 transaction이 많을 때 느려진다. Mysticeti는 transaction을 구조에 포함하는 즉시 확정함으로써 이 과정을 단순화한다. 그 결과, 추가 확인이나 네트워크 활동을 기다릴 필요가 없으므로, 활동이 적거나 까다로운 네트워크 환경에서 transaction을 확인하는 데 Mysticeti가 더 빠르고 신뢰할 수 있다.
+
+정확성 증명을 포함하여, 자세한 내용은 [MYSTICETI: Reaching the Latency Limits with Uncertified DAGs](/paper/mysticeti.pdf) 백서를 참조하라.
+
+## Related links
+
+<relatedlink to="/concepts/sui-architecture/transaction-lifecycle.mdx"></relatedlink><relatedlink to="/concepts/sui-architecture/sui-security.mdx"></relatedlink><relatedlink href="https://docs.sui.io/paper/mysticeti.pdf" label="MYSTICETI: Reaching the Latency Limits with Uncertified DAGs" desc="Whitepaper that documents the Mysticeti protocol."></relatedlink>
