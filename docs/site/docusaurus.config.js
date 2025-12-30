@@ -39,10 +39,10 @@ const config = {
     },
   ],
   // Set the production url of your site here
-  url: "https://docs.sui.io",
+  url: process.env.DOCS_URL || "https://docs.sui.io",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: "/",
+  baseUrl: process.env.DOCS_BASE_URL || "/",
   customFields: {
     amplitudeKey: process.env.AMPLITUDE_KEY,
   },
