@@ -215,9 +215,18 @@ function BreadcrumbsItem({ children, active }) {
   );
 }
 export default function DocBreadcrumbs() {
-  const breadcrumbs = useSidebarBreadcrumbs();
+  let breadcrumbs;
+  let docData;
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    breadcrumbs = useSidebarBreadcrumbs();
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    docData = useDoc();
+  } catch {
+    return null;
+  }
   const homePageRoute = useHomePageRoute();
-  const { frontMatter, toc } = useDoc();
+  const { frontMatter, toc } = docData;
   const windowSize = useWindowSize();
   const isMobile = windowSize === "mobile";
   const showTOC =
