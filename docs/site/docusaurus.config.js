@@ -49,7 +49,7 @@ const config = {
     amplitudeKey: process.env.AMPLITUDE_KEY,
   },
 
-  onBrokenLinks: "throw",
+  onBrokenLinks: process.env.DOCS_ALLOW_PARTIAL_I18N ? "warn" : "throw",
   onBrokenMarkdownLinks: "warn",
 
   markdown: {
