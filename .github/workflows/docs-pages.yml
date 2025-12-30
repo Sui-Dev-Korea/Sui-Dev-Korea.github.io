@@ -49,7 +49,6 @@ jobs:
       - name: Build
         env:
           DOCS_URL: ${{ vars.DOCS_URL }}
-          DOCS_BASE_URL: ${{ vars.DOCS_BASE_URL }}
           DOCS_ALLOW_PARTIAL_I18N: "true"
         run: pnpm build
 
