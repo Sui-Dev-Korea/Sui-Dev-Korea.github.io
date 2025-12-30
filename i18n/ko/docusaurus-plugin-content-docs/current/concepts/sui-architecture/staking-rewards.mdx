@@ -1,0 +1,27 @@
+---
+title: Validator Staking 및 Rewards
+draft: 'true'
+---
+
+Sui uses a delegated proof of stake (DPoS) system, where validators receive voting power from SUI token holders who delegate their stake. At the end of each epoch, validators receive rewards based on their performance and commission rate. Rewards auto-compound because validator staking pools receive new delegated stakes.
+
+## Staking on Sui compared to other blockchains
+
+Sui의 staking 메커니즘에는 다른 블록체인과는 다를 수 있는 기능들이 포함되어 있다.
+
+- Staking is self-custodial. Stakers keep their staked SUI tokens in an owned object.
+- Staking rewards auto-compound due to the liquidity-pool-inspired design.
+- A new stake begins contributing to a validator’s voting power starting the epoch after it is created. Similarly, a withdrawn stake stops contributing starting the epoch after withdrawal.
+
+<importcontent source="staking-pool-reqs.mdx" mode="snippet"></importcontent>
+
+## Rewards distribution
+
+At the end of each epoch, gas fees collected and stake subsidies are distributed among validators and stakers as staking rewards. The rewards a validator receives depend on:
+
+- **Performance:** If a validator does not operate performantly, other validators can report them using the tallying rule. The validator’s staking rewards for that epoch are then slashed.
+- **Commission rate:** The commission rate determines the portion of staking rewards the validator keeps. For example, if a validator has a 10% commission rate, then 10% of the staking rewards of their stakers go to the validator each epoch as new stake objects owned by the validator.
+
+## Rewards withdrawal
+
+Validator 보상은 일반적인 stake 객체(stake objects)로 분배되므로, validator와 staker 모두 동일한 방식으로 인출을 수행한다. Validator는 [`request_withdraw_stake` function](https://github.com/MystenLabs/sui/blob/6234ae2cc8137f3a2a34cd0aa1ac4fd5f31260e2/crates/sui-framework/packages/sui-system/sources/sui_system.move#L272)을 `sui_system` 모듈에서 호출하여 stake를 인출하고 보상을 받을 수 있다.

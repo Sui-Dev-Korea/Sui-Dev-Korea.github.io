@@ -1,0 +1,324 @@
+---
+title: zkLogin
+description: zkLogin은 두 항목을 공개적으로 연결하지 않고 OAuth credential을 사용하여 Sui address에서 transaction을 전송할 수 있게 해주는 Sui primitive 기능이다.
+---
+
+zkLogin은 두 항목을 공개적으로 연결하지 않고 OAuth credential을 사용하여 Sui address에서 transaction을 전송할 수 있게 해주는 Sui primitive 기능이다.
+
+zkLogin은 다음과 같은 목표로 설계되었다:
+
+- **Streamlined onboarding:** zkLogin은 암호 키를 다루거나 니모닉을 기억할 필요를 제거하여, 익숙한 OAuth 로그인 흐름을 사용해 Sui에서 거래할 수 있게 한다.
+- **Self-custody:** zkLogin transaction은 표준 OAuth 로그인 프로세스를 통한 사용자 승인이 필요하다. OAuth 제공자는 사용자를 대신하여 거래할 수 없다.
+- **Security:** zkLogin은 2요소 인증 방식이다. Transaction을 전송하려면 최근 OAuth 로그인에서 발급된 credential과 OAuth 제공자가 관리하지 않는 salt 모두 필요하다. OAuth 계정을 탈취한 공격자라도 salt까지 탈취하지 않는 한 사용자의 Sui address에서 거래할 수 없다.
+- **Privacy:** 영지식 증명은 제3자가 Sui address를 그 주소에 대응하는 OAuth 식별자와 연결하는 것을 방지한다.
+- **Optional verified identity:** 사용자는 특정 Sui address를 도출하는 데 사용된 OAuth 식별자를 검증하도록 선택할 수 있다. 이는 검증 가능한 온체인 신원 레이어의 기반을 마련한다.
+- **Accessibility:** zkLogin은 [Sui’s cryptography agility](./transaction-auth/signatures.mdx) 덕분에 여러 네이티브 Sui 서명 방식 중 하나이다. 이는 sponsored transactions와 multisig 같은 다른 Sui primitive 기능과 통합된다.
+- **Rigor:** zkLogin의 코드는 영지식에 특화된 두 업체에 의해 독립적으로 [audited](https://github.com/sui-foundation/security-audits/blob/main/docs/zksecurity_zklogin-circuits.pdf)되었다. Common reference string 생성을 위한 공개 zkLogin ceremony에는 100명 이상이 기여했다.
+
+애플리케이션이나 지갑에 zkLogin을 통합하려는 빌더라면 [zkLogin integration guide](../../guides/developer/cryptography/zklogin-integration.mdx)를 참고한다.
+
+영지식 증명이 생성되는 방식과 Sui가 zkLogin transaction을 검증하는 방법을 포함하여 zkLogin이 어떻게 동작하는지 알아보려면 [how zkLogin works](#how-zklogin-works)를 참고한다.
+
+zkLogin의 보안 모델과 프라이버시 고려 사항에 대한 정보는 [security and privacy](#security-and-privacy)를 참고한다.
+
+자주 묻는 질문은 [FAQ section](#faq)을 참고한다.
+
+## OpenID providers
+
+<importcontent source="openid-providers.mdx" mode="snippet"></importcontent>
+
+## How zkLogin works {#how-zklogin-works}
+
+큰 틀에서, zkLogin 프로토콜은 다음과 같이 동작한다:
+
+1. JWT는 OAuth 제공자가 서명한 payload이며 nonce라는 사용자 정의 필드를 포함한다. zkLogin은 nonce를 공개 키와 만료 epoch로 정의하여 [the OpenID Connect OAuth flow](https://openid.net/developers/how-connect-works/)를 사용한다.
+2. 지갑은 nonce에 정의된 임시 공개 키가 있는 임시 키 쌍을 저장한다. 임시 개인 키는 짧은 세션 동안 transaction에 서명한다. Groth16 영지식 증명은 민감한 필드를 숨기는 JWT로부터 생성된다.
+3. Transaction은 임시 서명과 영지식 증명을 포함하여 온체인에 제출된다. Sui authorities는 임시 서명과 증명을 검증한 후 transaction을 실행한다.
+4. 공개 키를 기반으로 Sui address를 도출하는 대신 zkLogin address는 `sub`(사용자 식별자), `iss`(제공자), `aud`(어플리케이션), 그리고 `user_salt`(OAuth 식별자를 온체인 address와 분리하는 값)로부터 도출된다.
+
+## The complete zkLogin flow
+
+![zkLogin flow diagram](images/zklogin-flow.png "zkLogin complete flow")
+
+(Step 0) zkLogin은 zkSNARK 인스턴스화를 위해 Groth16을 사용하며, 이는 회로에 연결된 common reference string(CRS)을 필요로 한다. Ceremony는 CRS를 생성하며 이 CRS는 증명 서비스의 증명 키와 Sui authorities의 검증 키를 생성하는 데 사용된다. 자세한 내용은 [ceremony](#ceremony)를 참고한다.
+
+(Step 1-3) 사용자는 nonce를 포함하는 JWT를 얻기 위해 OpenID provider(OP)에 로그인한다. 사용자는 임시 키 쌍`(eph_sk, eph_pk)`를 생성하고 `eph_pk`, 만료 시간(`max_epoch`), 그리고 randomness(`jwt_randomness`)를 nonce에 포함한다. 로그인 후 JWT는 애플리케이션의 redirect URL에 나타난다.
+
+(Step 4-5) 애플리케이션 프런트엔드는 JWT를 salt service로 보낸다. 서비스는 `iss`, `aud`, 그리고 `sub`를 기반으로 고유한 `user_salt` 를 반환한다.
+
+(Step 6-7) 사용자는 JWT, 사용자 salt, 임시 공개 키, JWT randomness, 그리고 key claim 이름(예: `sub`)을 증명 서비스로 보낸다. 증명 서비스는 다음에 해당하는 영지식 증명을 생성한다:
+
+- Nonce가 올바르게 도출되었음을 확인한다.
+- Key claim 값이 해당 JWT 필드와 일치함을 확인한다.
+- JWT에 대한 제공자의 RSA 서명을 검증한다.
+- Address가 key claim과 user salt와 일관됨을 확인한다.
+
+(Step 8) 애플리케이션은 `iss`, `aud`, 그리고 `sub`를 기반으로 사용자 address를 계산한다.
+
+(Step 9-10) 사용자는 임시 개인 키로 transaction에 서명하고 임시 서명, ZK proof, 기타 입력과 함께 이를 Sui에 제출한다.
+
+(After Step 10) Sui authorities는 제공자의 JWKs(합의에 의해 저장됨)와 임시 서명을 대조해 ZK proof를 검증한다.
+
+## Entities
+
+1. Application frontend: 이는 zkLogin을 지원하는 지갑 또는 프런트엔드 애플리케이션을 나타낸다. 이 프런트엔드는 임시 개인 키를 저장하고 사용자가 OAuth 로그인 흐름을 완료하도록 안내하며 zkLogin transaction을 생성하고 서명하는 책임을 진다.
+
+2. Salt Backup Service: 이는 고유 사용자별 salt를 반환하는 백엔드 서비스이다. salt를 유지하는 다른 전략은 [zkLogin Integration Guide](../../guides/developer/cryptography/zklogin-integration.mdx)를 참고한다.
+
+3. ZK Proving Service: 이는 JWT, JWT randomness, user salt, max epoch를 기반으로 ZK proof를 생성하는 백엔드 서비스이다. 이 증명은 zkLogin transaction을 위한 임시 서명과 함께 온체인에 제출된다.
+
+## Address definition
+
+Address는 다음 입력에 기반하여 계산된다:
+
+1. The address flag: zkLogin address를 위한 `zk_login_flag = 0x05`이다. 이는 [crypto agility](./transaction-auth/signatures.mdx)에 정의된 서명 방식의 domain separator 역할을 한다.
+
+2. `kc_name_F = hashBytesToField(kc_name, maxKCNameLen)`: Key claim의 이름으로, 예를 들자면 `sub`이다. 바이트 시퀀스는 `hashBytesToField`(아래에 정의됨)를 사용해 BN254의 field element로 매핑된다.
+
+3. `kc_value_F = hashBytesToField(kc_value, maxKCValueLen)`: `hashBytesToField`를 사용해 매핑된 key claim의 값이다.
+
+4. `aud_F = hashBytesToField(aud, maxAudValueLen)`: relying party(RP) 식별자이다. [definition](#terminology-and-notations)을 참고한다.
+
+5. `iss`: OpenID Provider(OP) 식별자이다. [definition](#terminology-and-notations)을 참고한다.
+
+6. `user_salt`: OAuth 식별자를 온체인 address와 분리하기 위해 도입된 값이다.
+
+마지막으로 `addr_seed = Poseidon_BN254(kc_name_F, kc_value_F, aud_F, Poseidon_BN254(user_salt)`인 경우 `zk_login_address = Blake2b_256(zk_login_flag, iss_L, iss, addr_seed)`를 도출한다.
+
+## Terminology and notations
+
+프로토콜 세부 정의와 함께 [spec](https://openid.net/specs/openid-connect-core-1_0.html#Terminology)에 정의된 관련 OpenID 용어와 해당 개념들이 zkLogin에서 어떻게 사용되는지 알아보려면 아래를 참고한다.
+
+### OpenID provider (OP)
+
+최종 사용자를 인증하고 인증 이벤트 및 최종 사용자에 대한 클레임을 RP에 제공할 수 있는 OAuth 2.0 authorization server이다. 이는 JWT payload의 `iss` 필드에서 식별된다. 현재 zkLogin이 지원하는 엔티티는 [table of available OPs](#openid-providers)에서 확인한다.
+
+### Relying party (RP) or client
+
+OpenID 제공자로부터 최종 사용자 인증과 클레임이 필요한 OAuth 2.0 client 애플리케이션이다. 이는 개발자가 애플리케이션을 생성할 때 OP에 의해 할당된다. 이는 JWT payload의 `aud` 필드에서 식별된다. 이는 zkLogin이 활성화된 모든 지갑 또는 애플리케이션을 의미한다.
+
+### Subject identifier (sub)
+
+Issuer 내에서 최종 사용자에 대해 로컬하게 유일하며 재할당되지 않는 식별자로 RP가 사용하도록 의도되었다. Sui는 사용자 address를 도출하기 위한 key claim으로 이를 사용한다.
+
+### JSON Web Key (JWK)
+
+OP에 대한 공개 키 집합을 나타내는 JSON 데이터 구조이다. 공개 endpoint(예: https://www.googleapis.com/oauth2/v3/certs)에 질의하여 제공자의 `kid`에 해당하는 유효한 공개 키를 검색할 수 있다. JWT 헤더의 `kid`와 일치하면 JWT는 payload와 해당 JWK에 대해 검증될 수 있다. Sui에서는 모든 authorities가 JWK endpoint를 독립적으로 호출하고, 모든 지원되는 제공자에 대한 JWK 최신 뷰를 프로토콜 업그레이드 동안 업데이트한다. JWK의 정확성은 validator stake의 정족수(2f+1)에 의해 보장된다.
+
+### JSON Web Token (JWT)
+
+사용자가 OAuth 로그인 흐름을 완료한 후 JWT는 RP로의 redirect URI에 포함된다(`https://redirect.com?id_token=$JWT_TOKEN` 처럼). JWT는 `header`, `payload`, 그리고 `signature`를 포함한다. 서명은 `jwt_message = header + . + payload`와 `kid`에 의해 식별되는 해당 메세지의 JWK와 대조해 검증되는 RSA 서명이다. `payload`는 여러 claim으로 구성된 이름-값 쌍 형태의 JSON을 포함한다. zkLogin 프로토콜과 관련된 특정 클레임은 아래를 참고한다.
+
+**Header**
+
+Name | Example Value | Usage
+--- | --- | ---
+alg | RS256 | zkLogin은 `RS256`(RSA + SHA-256)만 지원한다.
+kid | c3afe7a9bda46bae6ef97e46c95cda48912e5979 | JWT를 검증하는 데 사용되어야 하는 JWK를 식별한다.
+typ | JWT | zkLogin은 `JWT`만 지원한다.
+
+**Payload**
+
+Name | Example Value | Usage
+--- | --- | ---
+iss | https://accounts.google.com | OAuth 제공자에 할당된 고유 식별자이다.
+aud | 575519200000-msop9ep45u2uo98hapqmngv8d8000000.apps.googleusercontent.com | OAuth 제공자가 relying party에 할당한 고유 식별자이다.
+nonce | hTPpgF7XAKbW37rEUS6pEVZqmoI | Relying party가 설정하는 값이다. zkLogin가 활성화된 지갑은 이를 임시 공개 키, 만료 시간, randomness의 해시값으로 설정해야 한다.
+sub | 110463452167303000000 | 사용자에게 할당된 고유 식별자이다.
+
+zkLogin transaction의 경우 `iat`와 `exp` 클레임(타임스탬프)는 사용되지 않는다. 대신 `nonce`가 만료 시간을 지정한다.
+
+### Key claim
+
+sub 또는 email과 같이 사용자 address를 도출하는 데 사용되는 claim은  *key claim*이라 한다. 당연히, 한 번 설정된 후 다시 변경되지 않는 claim을 사용하는 것이 이상적이다. zkLogin은 현재 sub를 key claim으로 지원하는데 이는 OpenID 규격이 제공자가 이 식별자를 변경하지 못하도록 요구하기 때문이다. 이는 향후 email, 사용자 이름 등으로 확장될 수 있다.
+
+### Notations
+
+1. `(eph_sk, eph_pk)`: 임시 키 쌍은 임시 서명을 생성하는 데 사용되는 private/공개 키 쌍을 의미한다. 서명 메커니즘은 전통적인 transaction 서명과 동일하지만 짧은 세션 동안만 저장되고 새로운 OAuth 세션에서 갱신될 수 있으므로 일시적이다. 임시 공개 키는 nonce를 계산하는 데 사용된다.
+2. `nonce`: JWT payload에 포함되는 애플리케이션 정의 필드로, 임시 공개 키, JWT randomness, 최대 epoch(Sui에서 정의한 만료 epoch)의 해시값으로 계산된다. 구체적으로, zkLogin과 호환되는 nonce는 `nonce = ToBase64URL(Poseidon_BN254([ext_eph_pk_bigint / 2^128, ext_eph_pk_bigint % 2^128, max_epoch, jwt_randomness]).to_bytes()[len - 20..])`로 전달되어야 하는데 여기서 `ext_eph_pk_bigint`는 `ext_eph_pk`의 BigInt 표현이다.
+3. `ext_eph_pk`: 임시 공개 키의 바이트 표현(`flag || eph_pk`)이다. 크기는 서명 방식 선택에 따라 달라진다(플래그로 표시되며 [Signatures](./transaction-auth/signatures.mdx)에 정의됨).
+4. `user_salt`: OAuth 식별자를 온체인 address와 분리하기 위해 도입된 값이다.
+5. `max_epoch`: JWT가 만료되는 epoch이다. 이는 Sui에서 사용되는 u64이다.
+6. `kc_name`: Key claim 이름으로, 예시로는 `sub`가 있다.
+7. `kc_value`:: Key claim 값으로, 예시로는 `110463452167303000000`가 있다.
+8. `hashBytesToField(str, maxLen)`: Poseidon 해시를 사용하여 ASCII 문자열을 필드 요소로 해싱한다.
+
+## Ceremony
+
+OAuth 아티팩트의 프라이버시를 보호하기 위해 아티팩트 소유에 대한 영지식 증명이 제공된다. zkLogin은  영지식 증명을 인스턴스화하기 위해 Groth16 zkSNARK을 사용하는데 이는 증명 크기와 검증 효율성 측면에서 가장 효율적인 범용 zkSNARK이기 때문이다.
+
+그러나 Groth16은 신뢰할 수 있는 주체에 의해 설정되는 특정 계산 전용 common reference string(CRS)을 필요로 한다. zkLogin이 고가치 transaction의 안전한 보호와 중요한 smart contract의 무결성을 보장할 것으로 기대되는 만큼, 시스템의 보안을 단일 엔티티의 정직성에 의존할 수 없다. 따라서 zkLogin 회로의 CRS를 생성하기 위해서는, 많은 참여자 중 소수의 정직성을 가정하여 보안을 확보하는 프로토콜을 실행하는 것이 중요하다.
+
+### What is the ceremony?
+
+Sui zkLogin 세레모니는 다양한 참여자 그룹이 이 CRS를 생성하기 위해 수행하는 본질적으로 암호학적 다자 계산(MPC)이다. 우리는 Bowe, Gabizon, Miers가 기술한 MPC 프로토콜 [MMORPG](https://eprint.iacr.org/2017/1050.pdf)를 따른다. 프로토콜은 대략 두 단계로 진행된다. 첫 번째 단계는 타원 곡선 원소의 지수에서 비밀 값 tau의 거듭제곱 수열을 생성한다. 이 단계는 회로에 종속되지 않으므로 기존 커뮤니티가 기여한 [perpetual powers of tau](https://github.com/privacy-scaling-explorations/perpetualpowersoftau/tree/master)의 결과를 채택했다. 우리의 세레모니는 zkLogin 회로에 특화된 두 번째 단계였다.
+
+MMORPG 프로토콜은 순차적인 프로토콜로, 사전 동기화나 정해진 순서 없이도 무제한의 참여자가 순서대로 참여할 수 있게 한다. 각 참여자는 이전 참여자가 생성한 결과물을 다운로드하고, 자신의 엔트로피를 생성한 뒤 그것을 전달받은 결과 위에 덧씌워 자신의 기여 값을 만든 후, 이를 다음 참여자에게 전달해야 한다. 적어도 한 명의 참여자가 프로토콜을 성실히 따르고 강한 엔트로피를 생성하며 이를 신뢰성 있게 폐기하면 이 프로토콜은 보안을 보장한다.
+
+### How was the ceremony performed?
+
+우리는 다양한 배경과 소속을 가진 100명 이상의 사람들에게 초대장을 보냈다: Sui validators, 암호학자, Web3 전문가, 세계적 학자, 비즈니스 리더. 우리는 세레모니를 2023년 9월 12–18일에 진행하도록 계획했지만 고정된 슬롯 없이 참여자가 원할 때 참가할 수 있도록 허용했다.
+
+MPC가 순차적이므로 각 기여자는 이전 기여자의 작업이 끝날 때까지 기다려 이전 기여물을 수신하고 MPC 단계를 수행해 자신의 기여물을 생성해야 했다. 이러한 구조로 인해, 우리는 먼저 참여한 사람들이 작업을 완료하는 동안 뒤에 합류한 참여자들이 대기할 수 있도록 대기열을 마련하였다. 참가자 인증을 위해 각자에게 고유한 활성화 코드를 보냈다. 활성화 코드는 서명 키 쌍의 비밀 키였으며, 이중 목적을 가졌다: 이는 코디네이션 서버가 참가자의 이메일을 기여물과 연관시키고 해당 공개 키로 기여물을 검증할 수 있게 한다.
+
+참가자는 기여에 대한 두 가지 옵션이 있었다: 브라우저 또는 도커. 브라우저 옵션은 모든 것이 브라우저에서 이루어지므로 더 사용자 친화적이었다. 도커 옵션은 도커 설정이 필요하지만 더 투명하다—Dockerfile과 기여자 소스 코드가 오픈소스이고 전체 프로세스를 검증할 수 있다. 또한 브라우저 옵션은 [snarkjs](https://github.com/iden3/snarkjs)를, 도커 옵션은 [Kobi's implementation](https://github.com/iseriohn/phase2-bn254)을 사용한다. 이는 소프트웨어 다양성을 제공하며 기여자는 그들이 신뢰하는 방법으로 기여하도록 선택할 수 있었다. 추가로 참가자는 임의의 텍스트를 입력하거나 커서를 임의로 움직여 엔트로피를 생성할 수 있었다.
+
+zkLogin 회로와 세레모니 클라이언트 [code](https://github.com/sui-foundation/zk-ceremony-client)는 오픈소스로 공개 되었고 해당 링크는 세레모니 전에  검토할 수 있도록 참가자들에게 제공되었다. 추가로 우리는 이 개발자 문서와 zkSecurity의 회로에 대한 [audit report](https://github.com/sui-foundation/security-audits/blob/main/docs/zksecurity_zklogin-circuits.pdf)도 게시했다. 우리는 1단계에서 [perpetual powers of tau](https://github.com/privacy-scaling-explorations/perpetualpowersoftau/tree/master/0080_carter_response)로부터 회로에 종속되지 않는 [challenge #0081](https://pse-trusted-setup-ppot.s3.eu-central-1.amazonaws.com/challenge_0081)(80건의 커뮤니티 기여로 생성됨)을 채택했다. 우리는 편향성을 제거하기 위해 epoch #3298000에서 [Drand](http://drand.love) 랜덤 비콘의 결과물을 적용했다. 2단계에서 우리의 세레모니에는 111건의 기여가 있었고 브라우저 82건, 도커 29건이었다. 마지막으로 기여의 편향을 제거하기 위해 epoch #3320606에서 Drand 랜덤 비콘의 결과물을 적용했다. 모든 중간 파일은 1단계는 [here](https://github.com/sui-foundation/zklogin-ceremony-contributions/blob/main/phase1/README.md), 2단계는 [here](https://github.com/sui-foundation/zklogin-ceremony-contributions/blob/main/phase2/README.md)의 지침을 따라 재현할 수 있다.
+
+## Finalization
+
+최종 CRS와 모든 참여자의 기여에 대한 전사본은 공개 저장소에서 확인할 수 있다. 기여자들은 자신이 작업하던 이전 기여의 해시값과, 자신의 기여가 반영된 이후의 결과 해시값을 화면에 표시된 형태로 확인하고 이메일로도 전달받았다. 기여자들은 이 해시값들을 세레모니 사이트에 공개된 전사본과 비교할 수 있다. 또한 누구나 해시값이 올바르게 계산되었고 각 기여가 최종 파라미터에 적절히 반영되었음을 확인할 수 있다.
+
+결국 최종 CRS는 증명 키와 검증 키를 생성하는 데 사용되었다. 증명 키는 zkLogin을 위한 영지식 증명을 생성하는 데 사용되며 ZK 증명 서비스에 저장된다. 검증 키는 Sui에서 zkLogin transaction을 검증하는 데 사용되는 validator 소프트웨어([release 1.10.1](https://github.com/MystenLabs/sui/releases/tag/mainnet-v1.10.1)의 프로토콜 버전 25)의 일부로 [deployed](https://github.com/MystenLabs/sui/pull/13822)되었다.
+
+## Security and privacy
+
+다음 섹션에서는 모든 zkLogin 아티팩트, 그들의 보안 가정, 그리고 유실 또는 노출 시의 결과를 살펴본다.
+
+### JWT
+
+JWT의 유효성은 피싱 공격을 방지하기 위해 클라이언트 ID (`aud`) 범위로 제한된다. 증명에 대한 동일 출처 정책은 악성 애플리케이션을 위해 얻어진 JWT가 zkLogin에 사용되는 것을 방지한다. 클라이언트 ID용 JWT는 redirect URL을 통해 애플리케이션 프런트엔드로 직접 전송된다. 이러한 토큰은 보통 사용자 이름과 이메일 같은 민감한 정보를 포함하므로, 특정 클라이언트 ID에 대해 유출된 JWT는 사용자 프라이버시를 훼손할 수 있다. 더 나아가 백엔드 salt 서버가 사용자 salt 관리를 담당하는 경우, JWT가 사용자의 salt를 가져오기 위해 악용될 가능성이 있으며, 이는 추가적인 위험을 초래한다.
+
+하지만 해당 임시 개인 키가 안전한 이상, JWT 유출이 곧바로 자금 손실을 의미하지는 않는다.
+
+### User salt
+
+zkLogin 지갑에 접근하려면 사용자 salt가 필요하다. 이 값은 ZK proof 생성과 zkLogin address 도출 모두에 필수적이다.
+
+사용자 salt의 유출은 자금 손실을 의미하지는 않지만, 공격자가 사용자의 주체 식별자(예: `sub`)를 Sui address와 연관지을 수 있게 한다. 이는 pairwise 또는 공개 주체 식별자 사용 여부에 따라 문제가 될 수 있다. 특히 pairwise ID를 사용하는 경우(예: Facebook) 주체 식별자가 RP마다 고유하므로 문제가 없다. 그러나 공개 재사용 ID(예: Google, Twitch)의 경우 전역 고유 sub 값이 사용자를 식별하는 데 사용될 수 있다.
+
+### Ephemeral private key
+
+임시 개인 키의 수명은 유효한 ZK proof 생성을 위해 nonce에 지정된 최대 epoch에 연관 되어 있다. 만약 그것이 분실되더라도, 새로운 ephemeral 개인 키를 생성하여 트랜잭션 서명에 사용할 수 있으며, 새로운 nonce를 사용해 새로 생성된 ZK proof가 함께 제공된다. 그러나 임시 개인 키가 탈취된 경우, 자금을 이동시키려면 사용자 salt와 유효한 ZK proof를 확보해야 한다.
+
+### Proof
+
+증명 자체를 획득하는 것만으로는 유효한 zkLogin transaction을 생성할 수 없으며 transaction에 대한 임시 서명도 필요하다.
+
+### Privacy
+
+기본적으로 OAuth 주체 식별자(예: `sub`)와 Sui address 사이에는 연관이 없다. 이것이 사용자 salt의 목적이다. JWT는 기본적으로 온체인에 게시되지 않는다. 공개되는 값에는 `iss`, `aud`, `kid`가 포함되어 공개 입력 해시값을 계산할 수 있으며, `sub`와 같은 민감한 필드는 증명 생성 시 private input으로 사용된다.
+
+ZK 증명 서비스와 salt service(운영되는 경우)는 사용자 salt와 JWT를 알고 있으므로 사용자 신원을 연결할 수 있지만, 두 서비스는 설계상 stateless하다.
+
+향후 사용자는 온체인에서 Sui address와 연결된 OAuth 신원을 검증하도록 선택할 수 있다.
+
+## FAQ
+
+### zkLogin은 어떤 제공자들과 호환되나요?
+
+zkLogin은 OAuth 2.0 프레임워크 위에 구축된 OpenID Connect와 연동되는 제공자들을 지원할 수 있다. 이는 OAuth 2.0과 호환되는 제공자 중 일부에 해당한다. 활성화된 모든 제공자는 [latest table](#openid-providers)를 참고한다. 기타 호환되는 제공자들도 향후 프로토콜 업그레이드를 통해 활성화될 예정이다.
+
+### zkLogin 지갑은 전통적인 개인키 기반 지갑과 어떻게 다른가요?
+
+전통적인 개인 키 지갑은 사용자가 니모닉과 패스프레이즈를 지속적으로 기억해야 하며 개인 키 탈취로 인한 자금 손실을 방지하기 위해 안전한 저장소가 필요하다.
+
+반면, zkLogin 지갑은 세션 만료가 설정된 임시 개인 키 저장소와 만료가 있는 OAuth 로그인 플로우만 필요하다. 임시 키를 잊어버려도 자금 손실로 이어지지 않는데, 사용자는 언제든 다시 로그인하여 새로운 임시 키와 새로운 ZK proof를 생성할 수 있기 때문이다.
+
+### zkLogin은 MPC 또는 Multisig 지갑과 어떻게 다른가요?
+
+Multi-Party Computation(MPC) 지갑과 Multisig 지갑은 다중 키 또는 다중 키 조각을 분산하여 보관하고, 서명을 승인하기 위한 임계값을 정의하는 방식에 의존한다.
+
+zkLogin은 어떠한 개별 개인 키도 분할하지 않지만, 사용자가 OAuth 제공자를 통해 인증할 때 임시 개인 키가 새로운 nonce와 함께 등록된다. zkLogin의 주요 장점은 사용자가 MPC나 Multisig 같은 개인 키 관리 기법조차 사용할 필요 없이, 어디서든 어떤 영구적인 개인 키를 관리할 필요가 없다는 점이다.
+
+zkLogin은 주소를 위한 2FA 방식으로 볼 수 있으며, 첫 번째 요소는 사용자의 OAuth 계정이고 두 번째는 사용자의 salt이다.
+
+더 나아가 Sui는 네이티브로 Multisig 지갑을 지원하므로 k-of-N 설정에서 zkLogin 부분을 2FA로 사용하는 등 추가 보안을 위해 Multisig 지갑에 하나 이상의 zkLogin 서명자를 포함할 수 있다.
+
+### 나의 OAuth 계정이 탈취되면, 나의 zkLogin 주소는 어떻게 되나요?
+
+zkLogin이 2FA 시스템이기 때문에 OAuth 계정을 탈취한 공격자라도 별도로 salt를 탈취하지 않는 한 zkLogin address에 접근할 수 없다.
+
+### OAuth 계정 접근 권한을 잃으면, 나의 zkLogin 주소 접근도 잃게 되나요?
+
+그렇다. zkLogin을 사용하려면 OAuth 계정에 로그인하고 현재의 JWT를 생성할 수 있어야 한다.
+
+### OAuth credential을 잃는다는 것이 zkLogin 지갑의 자금 손실을 의미하나요?
+
+잊어버린 OAuth credential은 일반적으로 해당 제공자에서 비밀번호를 재설정하여 복구할 수 있다. 사용자의 OAuth credential이 탈취된 불행한 상황에서, 공격자가 계정을 장악하기 위해서 여전히 `user_salt`를 획득해야 할 뿐만 아니라 어떤 지갑이 사용되는지도 알아야한다. 최신 `user_salt` 제공자는 유효하고 만료되지 않은 JWT를 제시하는 주체에게조차 사용자의 salt가 제공되지 않도록 추가적인 2FA 보안 장치를 적용할 수도 있다는 점에 유의한다.
+
+또한 zkLogin address가 사용자의 신원이나 사용된 지갑에 대한 어떠한 정보도 노출하지 않기 때문에 블록체인을 모니터링하는 것만으로는 표적 공격이 더 어려워진다는 점을 강조하는 것이 중요하다. 마지막으로, 불행히도 OAuth 계정에 대한 접근 권한을 영구적으로 잃게 되는 경우, 해당 지갑에 대한 접근도 상실된다. 그러나 분실한 OAuth 계정을 복구할 필요가 있다면, 지갑 제공자에게 권장하는 좋은 방법은 기본 Sui Multisig 기능을 지원하고 백업 방법을 추가하는 것이다. 또한 모든 서명자가 zkLogin을 사용하는 Multisig 지갑을 구성하는 것도 가능한데, 예를 들어, 첫 번째는 Google OAuth, 두 번째는 Facebook OAuth를 사용하는 1-of-2 Multisig zkLogin 지갑이 그 사례다.
+
+### 기존의 개인키 기반 지갑을 zkLogin 지갑으로 전환하거나, 반대로 zkLogin 지갑을 개인키 지갑으로 통합할 수 있나요?
+
+아니다. zkLogin 지갑 주소는 개인 키 주소와는 다르게 도출된다.
+
+### 나의 zkLogin 주소가 나중에 변경될 수도 있나요?
+
+zkLogin address는 `sub`, `iss`, `aud`, `user_salt`로부터 도출된다.
+
+사용자가 동일한 OAuth 제공자로 동일한 지갑에 로그인하면 JWT 자체는 매번 달라 보일 수 있어도 JWT의 `sub`, `iss`, `aud`, `user_salt`(정의 참고)는 변경되지 않으므로 address는 변경되지 않는다.
+
+그러나 사용자가 다른 OAuth 제공자로 로그인하면 제공자마다 `iss`와 `aud`가 다르게 정의되므로 address가 변경된다.
+
+또한 각 지갑 또는 애플리케이션은 자체 `user_salt`를 유지하므로 동일한 제공자로 다른 지갑에 로그인하면 서로 다른 address가 나올 수 있다.
+
+address에 대해 더 보려면 [definition](#address-definition)를 참고한다.
+
+### 동일한 OAuth 제공자 계정으로 여러 개의 zkLogin 주소를 가질 수 있나요?
+
+그렇다, 이는 각 계정에 대해 다른 지갑 제공자나 다른 `user_salt`를 사용함으로써 가능하다. 이는 서로 다른 계정 간 자금을 분리하는 데 유용하다.
+
+### zkLogin 지갑은 수탁형인가요?
+
+zkLogin 지갑은 비수탁 또는 비호스팅 지갑이다.
+
+수탁 또는 호스팅 지갑은 제3자(수탁자)가 지갑 사용자를 대신하여 개인 키를 제어하는 지갑이다. zkLogin 지갑에는 이러한 제3자가 존재하지 않는다.
+
+대신, zkLogin 지갑은 2-of-2 Multisig로 볼 수 있는데, 이때 두 가지 credential은 사용자가 직접 보관하는 OAuth credential과 salt이다.<br>다시 말해, OAuth 제공자, 지갑 벤더, ZK 증명 서비스, 그리고 salt 서비스 제공자 중 누구도 수탁자가 아니다.
+
+### ZK proof 생성에는 비용이 많이 드는데, 모든 transaction 마다 새로운 증명을 생성해야 하나요?
+
+아니다. 증명 생성은 임시 KeyPair가 만료될 때만 필요하다. Nonce는 임시 공개 키(`eph_pk`)와 만료(`max_epoch`)로 정의되므로 ZK proof는 JWT의 nonce에 커밋된 만료까지 유효하다. ZK proof는 캐시할 수 있고 동일한 임시 키는 만료될 때까지 transaction 서명에 사용할 수 있다.
+
+### zkLogin은 모바일 환경에서도 동작하나요?
+
+zkLogin은 특정 애플리케이션이나 지갑의 기능이 아니라 Sui 네이티브 primitive 기능이다. 이는 모바일을 포함하여 모든 Sui 개발자가 사용할 수 있다.
+
+### 사용자가 OAuth credential을 잃었을 경우, 계정 복구가 가능한가요?
+
+그렇다, 사용자는 OAuth 제공자의 복구 절차를 따르면 된다. 임시 개인 키는 갱신할 수 있으며 새로운 OAuth 로그인 흐름을 완료한 후 사용자는 새로운 ZK proof를 획득하고 갱신된 키로 transaction에 서명할 수 있다.
+
+### zkLogin 회로에 대해 전제하고 있는 조건들은 무엇인가요?
+
+Groth16의 작동 방식 때문에 JWT의 여러 필드에 길이 제한을 두고 있다. 길이 제한이 적용되는 필드에는 aud, iss, 그리고 JWT의 header와 payload 등이 포함된다. 예를 들어, 현재 zkLogin은 길이가 최대 120인 aud 값에서만 동작할 수 있다(이 값은 아직 확정된 것이 아니다). 전반적으로 이러한 제한을 가능한 한 관대하게 설정하려고 노력했다. 우리가 확보할 수 있는 최대한 많은 JWT를 검토한 뒤 이 값들을 결정했다.
+
+### zkLogin은 소셜 로그인을 지원하는 다른 솔루션들과 어떻게 다른가요?
+
+Web3 지갑을 위한 Web2 credential 기반 소셜 로그인을 제공하는 것은 새로운 개념이 아니지만, 기존 솔루션은 하나 이상의 신뢰 가정을 가진다:
+
+1. 블록체인 자체가 아닌 다른 네트워크나 제3자를 신뢰하여 Web2 credential을 검증하며, 일반적으로 신뢰된 주체가 온체인에 게시한 JWK 오라클을 포함한다.
+2. MPC, 임계값 암호, secure enclave를 사용하든 상관없이 일부 주체가 영구 개인 키를 관리하도록 신뢰한다.
+3. 프라이버시 필드를 노출하면서 온체인에서 JWT를 검증하거나, 비용이 많이 들 수 있는 온체인 ZK proof 검증을 위해 스마트 컨트랙트(계정 추상화)에 의존한다.
+
+일부 기존 배포 솔루션은 이러한 가정 중 일부에 의존한다. Web3Auth와 DAuth 소셜 로그인은 JWT를 검증하기 위해 Web3auth Auth Network 노드에 커스텀 OAuth verifier 배포를 요구한다. Magic Wallet과 Privy 또한 DID 표준 채택을 위해 커스텀 OAuth 신원 발급자와 검증자를 요구한다. 모든 솔루션은 여전히 AWS 같은 신뢰된 당사자에 대한 위임, Shamir Secret Sharing 또는 MPC를 통해 영구 개인 키 관리를 필요로 한다.
+
+zkLogin이 Sui에 제공하는 주요 차별점은 다음과 같다:
+
+1. Native Support in Sui: 다른 블록체인에 의존하지 않는 솔루션과 달리 zkLogin은 Sui 전용으로 배포된다. 이는 zkLogin transaction이 Multisig 및 sponsored transactions와 원활하게 결합될 수 있음을 의미한다.
+
+2. Self-Custodial without additional trust: 우리는 JWT의 nonce 필드를 활용하여 임시 공개 키를 확정지으므로, 어떤 신뢰된 주체와도 영구 개인 키 관리가 필요하지 않다. 또한 JWK 자체는 validators의 stake 정족수에 의해 합의된 오라클이므로 어떤 권위의 출처도 신뢰하지 않는다.
+
+3. Full privacy: ZK proof와 임시 서명 외에는 온체인에 제출할 것이 없다.
+
+4. Compatible with Existing Identity Providers: zkLogin은 OpenID Connect를 채택한 제공자와 호환된다. OAuth 제공자 자체 외의 중간 신원 발급자나 검증자를 신뢰할 필요가 없다.
+
+### 오프체인에서 zkLogin 서명을 어떻게 검증할 수 있을까요?
+
+다음 옵션은 Sui의 JWK 상태와 현재 epoch를 사용하여 transaction 데이터 또는 개인 메시지에 대한 zkLogin 서명을 지원한다.
+
+1.
+
+    Sui TypeScript SDK를 사용한다. 이는 GraphQL 클라이언트를 초기화하고 내부적으로 endpoint를 호출한다.
+
+2.
+
+     <a>zklogin-verifier</a>에 설명된 대로 자체 호스팅 서버 endpoint를 사용하고 이 endpoint를 호출한다. 이는 로직 유연성을 제공한다.
+
+### multisig 지갑 안에서 zkLogin을 사용할 수 있나요?
+
+그렇다. 자세한 내용은 [Multisig Guide](https://sdk.mystenlabs.com/typescript/cryptography/multisig#multisig-with-zklogin)를 참조한다.
+
+## Related links
+
+<relatedlink to="/guides/developer/cryptography/zklogin-integration.mdx"></relatedlink><relatedlink to="/guides/developer/cryptography/zklogin-integration/zklogin-example.mdx"></relatedlink>

@@ -1,0 +1,216 @@
+---
+title: Sui CLI Cheat Sheet
+description: 이 요약 자료를 활용하여 자주 사용하는 Sui CLI 명령어를 학습한다.
+keywords:
+  - sui cli
+  - common sui cli commands
+  - cli cheat sheet
+  - quick reference
+---
+
+이 요약 자료는 자주 사용하는 Sui CLI 명령어를 보여준다.
+
+:::tip
+
+<a href="/doc/sui-cli-cheatsheet.pdf" target="_blank" rel="noreferrer">Download sheet as PDF</a>
+
+:::
+
+## Addresses &amp; aliases
+
+<table class="w-100">
+	<thead>
+		<tr>
+			<td>Command</td>
+			<td>Description</td>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td class="w-2/3">`sui client active-address`</td>
+			<td class="w-1/3">활성 주소를 가져온다</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui client addresses`</td>
+			<td class="w-1/3">주소, 별칭 및 현재 활성 주소를 나열한다.</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui client new-address ed25519`</td>
+			<td class="w-1/3">ED25519 체계를 사용하여 새 주소를 생성한다.</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui client new-address ed25519 MY_ALIAS`</td>
+			<td class="w-1/3">ED25519 체계와 별칭으로 새 주소를 만든다.</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui client switch --address ADDRESS`</td>
+			<td class="w-1/3">이것을 활성 주소로 만든다(별칭도 허용).</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui keytool convert PRIVATE_KEY`</td>
+			<td class="w-1/3">Hex 또는 Base64 형식의 개인 키를 새로운 형식으로 변환한다(Bech32 인코딩된 33바이트 플래그 || "suiprivkey"로 시작하는 개인 키)</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui keytool generate ed25519`</td>
+			<td class="w-1/3">ED25519 체계를 사용하여 새 키 쌍을 생성하고 파일에 저장한다.</td>
+		</tr>
+		<tr>
+      <td class="w-2/3">`sui keytool import INPUT KEY_SCHEME`</td>
+			<td class="w-1/3">입력 니모닉 구문 또는 Bech32로 인코딩된 33바이트 플래그 || "suiprivkey"로 시작하는 privkey를 사용하여 Sui CLI 키 저장소에 새 키를 추가한다.</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui keytool update-alias OLD_ALIAS NEW_ALIAS`</td>
+			<td class="w-1/3">주소의 별칭을 업데이트한다</td>
+		</tr>
+	</tbody>
+</table>
+
+## Faucet &amp; gas
+
+<table class="w-100">
+	<thead>
+		<tr>
+			<td>Command</td>
+			<td>Description</td>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td class="w-2/3">`sui client faucet`</td>
+			<td class="w-1/3">활성화된 네트워크와 연결된 faucet에서 SUI 코인을 얻는다.</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui client faucet --address ADDRESS`</td>
+			<td class="w-1/3">해당 주소로 SUI 코인을 받는다 (별칭도 허용됨).</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui client faucet --url CUSTOM_FAUCET_URL`</td>
+			<td class="w-1/3">커스텀 faucet에서 SUI 코인을 받는다</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui client gas`</td>
+			<td class="w-1/3">활성 주소에 대한 가스 코인을 나열</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui client gas ADDRESS`</td>
+			<td class="w-1/3">주어진 주소에 대한 가스 코인 목록을 표시한다(별칭도 허용).</td>
+		</tr>
+	</tbody>
+</table>
+
+## Network command description
+
+<table class="w-100">
+	<thead>
+		<tr>
+			<td>Command</td>
+			<td>Description</td>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td class="w-2/3">`sui client active-env`</td>
+			<td class="w-1/3">활성 환경을 확보한다</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui client envs`</td>
+			<td class="w-1/3">정의된 환경 목록</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui client new-env --rpc URL --alias ALIAS`</td>
+			<td class="w-1/3">URL과 별칭을 사용하여 새 환경을 만든다.</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui client switch --env ENV_ALIAS`</td>
+			<td class="w-1/3">주어진 환경으로 전환한다</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui genesis`</td>
+			<td class="w-1/3">부트스트랩을 실행하고 새로운 Sui 네트워크를 초기화한다.</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui start`</td>
+			<td class="w-1/3">로컬 Sui 네트워크를 시작한다</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui-faucet`</td>
+			<td class="w-1/3">로컬 faucet을 시작한다. 참고로, 이것은 다른 바이너리 파일이다.</td>
+		</tr>
+	</tbody>
+</table>
+
+## Create, build, and test a Move project
+
+<table class="w-100">
+	<thead>
+		<tr>
+			<td>Command</td>
+			<td>Description</td>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td class="w-2/3">`sui move build`</td>
+			<td class="w-1/3">현재 디렉토리에 Move 프로젝트를 빌드한다</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui move build --path PATH`</td>
+			<td class="w-1/3">제공된 경로에서 Move 프로젝트를 빌드한다</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui move migrate PATH`</td>
+			<td class="w-1/3">제공된 경로의 패키지에 대해 Move 2024로 마이그레이션한다.</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui move new PROJECT_NAME`</td>
+			<td class="w-1/3">지정된 폴더에 새 Move 프로젝트를 생성한다.</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui move test`</td>
+			<td class="w-1/3">현재 디렉토리에서 Move 프로젝트를 테스트한다.</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui move test --trace`</td>
+			<td class="w-1/3">현재 디렉터리의 Move 테스트에 대한 실행 트레이스를 생성한다. [Move Trace Debugger](https://marketplace.visualstudio.com/items?itemName=mysten.move-trace-debug) 확장 프로그램과 함께 사용한다.</td>
+		</tr>
+	</tbody>
+</table>
+
+## Executing transactions
+
+<table class="w-100">
+	<thead>
+		<tr>
+			<td>Command</td>
+			<td>Description</td>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td class="w-2/3">`sui client call \`<br>  `--package PACKAGE \`<br>  `--module MODULE \`<br>  `--function FUNCTION`</td>
+			<td class="w-1/3">Move 패키지를 호출한다</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui client merge-coin \`<br>  `--primary-coin COIN_ID \`<br>  `--coin-to-merge COIN_ID`</td>
+			<td class="w-1/3">두 코인을 merge한다.</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui client split-coin \`<br>  `--coin-id COIN_ID \`<br>  `--amounts 1000`</td>
+			<td class="w-1/3">코인을 두 개로 나눈다. 하나는 1000 MIST가 들어있고 나머지는 다른 하나에 있다</td>
+		</tr>
+		<tr>
+			<td class="w-2/3"> 				`sui client pay-sui \`<br>  `--input-coins COIN_ID \`<br>  `--recipients ADDRESS \`<br>  `--amounts 100000000`</td>
+			<td class="w-1/3">0.1 SUI를 주소로 전송하고 동일한 코인을 가스로 사용한다.</td>
+		</tr>
+		<tr>
+			<td class="w-2/3">`sui client transfer-sui \`<br>  `--sui-coin-object-id COIN_ID \`<br>  `--to ADDRESS`</td>
+			<td class="w-1/3">SUI object를 주소로 전송하고 동일한 코인을 가스에 사용한다.</td>
+		</tr>
+	</tbody>
+</table>
+
+## Programmable transaction blocks (PTBs)
+
+<table class="w-100"> 	<thead> 		<tr> 			<td>Command</td> 			<td>Description</td> 		</tr> 	</thead> 	<tbody> 		<tr> 			<td class="w-2/3">`sui client ptb --move-call p::m::f "<type>" args`</type>
+</td> 			<td class="w-1/3">패키지 및 모듈에서 Move 함수 호출</td> 		</tr> 		<tr> 			<td class="w-2/3">`sui client ptb --make-move-vec "<u>" "[1000,2000]"`</u>
+</td> 			<td class="w-1/3">u64 유형의 두 요소를 사용하여 Move 벡터를 만든다.</td> 		</tr> 		<tr> 			<td class="w-2/3"> 				`sui client ptb \`<br>  `--split-coins gas "[1000]" \`<br>  `--assign new_coins \`<br>  `--transfer-objects 				"[new_coins]" ADDRESS` 			</td> 			<td class="w-1/3">가스 코인을 나눠서 주소로 이체한다</td> 		</tr> 		<tr> 			<td class="w-2/3">`sui client ptb --transfer-objects "[object_id]" ADDRESS`</td> 			<td class="w-1/3"> 				Object를 주소로 전송한다. 배열에 여러 object를 전달할 수 있다. 			</td> 		</tr> 		<tr> 			<td class="w-2/3"> 				`sui client ptb \`<br>  `--move-call sui::tx_context::sender \`<br>  `--assign sender \`<br>  `--publish "." \`<br>  `--assign 				upgrade_cap \`<br>  `--transfer-objects "[upgrade_cap]" sender` 			</td> 			<td class="w-1/3">Move 패키지를 게시하고 upgrade capability를 전송자에게 전송한다.</td> 		</tr> 	</tbody> </table>
