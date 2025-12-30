@@ -1,0 +1,89 @@
+---
+title: Keys and Addresses
+description: Sui는 BIP-32, SLIP-0010, BIP-44, BIP-39 지갑 사양을 지원한다. 서명된 transaction의 경우 Sui는 pure Ed25519, ECDSA Secp256k1, ECDSA Secp256r1 및 multisig를 지원한다.
+keywords:
+  - BIP-32
+  - SLIP-0010
+  - BIP-44
+  - BIP-39
+  - Ed25519
+  - ECDSA Secp256k1
+  - ECDSA Secp256r1
+  - multisig
+  - key derivation
+  - key derivation paths
+  - key derivation schemes
+  - address format
+---
+
+Sui는 사용자를 위한 키 관리를 용이하게 하기 위해 BIP-32 및 그 변형인 SLIP-0010, BIP-44, BIP-39를 포함한 암호화폐 산업에서 널리 인정된 지갑 사양을 준수한다. 현재 Sui는 서명된 transaction을 위해 순수 Ed25519, ECDSA Secp256k1, ECDSA Secp256r1 및 multisig를 지원한다.
+
+각 지갑 사양에 대한 자세한 정보는 다음 링크를 참고한다:
+
+- [BIP-32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki)
+- [BIP-39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki)
+- [BIP-44](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki)
+- [SLIP-0010](https://github.com/satoshilabs/slips/blob/master/slip-0010)
+
+## Key derivation scheme
+
+Sui는 Ed25519 (EdDSA) 서명을 지원하는 지갑을 관리하기 위해 SLIP-0010을 사용한다.
+
+Ed25519 (EdDSA) 서명 방식을 지원하는 지갑을 관리하기 위해, Sui는 SLIP-0010을 따르며, 이는 지갑이 항상 하드닝된 키 경로를 사용해 부모 개인 키에서 자식 개인 키를 파생하도록 강제한다.
+
+Sui는 ECDSA Secp256k1 및 ECDSA Secp256r1 서명 방식을 지원하는 지갑을 관리하기 위해 BIP-32를 따른다.
+
+BIP-32는 일련의 키를 논리적으로 연결하기 위한 계층적 deterministic 지갑 구조를 정의한다. 이와 같은 방식으로 키를 그룹화하면 사용자가 많은 개인 키를 추적해야 하는 오버헤드를 줄인다. 이 방법은 또한 하나의 관리 주체 아래에서 custodian이 각 사용자 계정마다 서로 다른 관리용 주소를 발급할 수 있게 한다. BIP-32를 사용하면 개인 키 파생을 공개 키 파생과 분리할 수 있고, 그 결과 공개 키들의 chain과 그 주소는 파생하면서 개인 키는 서명을 위해 오프라인 상태로 유지할 수 있는 watch-only 지갑 use case를 구현할 수 있다.
+
+## Key derivation path
+
+BIP-44는 키 파생 경로의 다섯 단계와 각 단계의 정확한 의미를 추가로 정의한다: `m / purpose' / coin_type' / account' / change / address_index`. 이 구조에서 슬래시는 계층에서 새로운 단계, 즉 자식을 나타낸다.
+
+`purpose` 단계는 일반적으로 BIP 번호에 대응하도록 44로 설정된다. 그러나 Sui에서는 purpose 단계가 서로 다른 서명 방식을 구분하며, Ed25519에는 44, ECDSA Secp256k1에는 54, Secp256r1에는 74가 설정된다. purpose 단계를 44가 아닌 값으로 설정하는 것은 비표준이지만, 서로 다른 서명 방식을 구분하기 위해 purpose 필드를 사용하는 것은 일반적이다. 예를 들어 BIP-49와 BIP-84는 Bitcoin에서 script type을 식별하는 데 사용된다. Sui는 54 아래에 기존 BIP가 없어 어떤 Bitcoin standard와도 혼동을 피할 수 있기 때문에 ECDSA Secp256k1을 나타내는 값으로 54를 선택했다.
+
+`coin_type` 값은 다른 모든 암호화폐를 모아 둔 repository에서 관리된다. 두 서명 방식 모두 Sui의 등록된 coin_type 784(SUI를 전화 키패드에서 나타낸 값)를 사용한다.
+
+`account` 단계는 일반적으로 사용자 계정을 논리적으로 분리하고 특정 계정 카테고리를 만드는 데 사용된다.
+
+일반적으로 account-based 통화는 처음 세 단계만 정의하는 반면, UTXO-based 통화는 change와 address 단계 정의를 추가로 포함하는 것으로 받아들여진다. Sui의 object-oriented data model은 UTXO 기반도 계정 기반도 아니고 (실제로 둘을 결합한 형태이기 때문에), 최대한의 호환성을 위해 다섯 단계 모두를 사용한다.
+
+Scheme | Path | Comments
+--- | --- | ---
+Ed25519 | `m/44'/784'/{account}'/{change}'/{address}'` | 키 파생 경로의 각 단계가 하드닝되어 있다.
+ECDSA Secp256k1 | `m/54'/784'/{account}'/{change}/{address}` | 처음 세 단계만 하드닝되어 있다.
+ECDSA Secp256r1 | `m/74'/784'/{account}'/{change}/{address}` | 처음 세 단계만 하드닝되어 있다.
+
+## Mnemonics support
+
+Sui가 seed에서 마스터 키를 파생하는 deterministic한 방식을 정의한 이후, BIP-39는 니모닉을 사용해 이 seed를 사람이 더 읽기 쉽고 기억하기 쉽도록 만들기 위해 도입된다. Sui는 적절히 체크섬이 적용된 BIP-39 단어 목록에서 나온 12, 15, 18, 21, 24개의 단어를 허용하며, 이는 각각 128, 160, 192, 224, 256비트 entropy에 해당한다. Sui Wallet과 SDKs는 다양한 서명 방식으로 transaction에 서명하기 위한 유연한 interface를 제공한다.
+
+## Address format
+
+32바이트 Sui address를 파생하기 위해 Sui는 서명 방식 flag 1바이트와 공개 키 바이트를 이어 붙인 값을 [BLAKE2b](https://www.blake2.net/) (256 bits output) hashing function을 사용해 hash한다. Sui address는 현재 순수 Ed25519, Secp256k1, Secp256r1, MultiSig를 지원하며, 각각에 대응하는 flag 바이트는 0x00, 0x01, 0x02, 0x03이다.
+
+## Example
+
+Sui Wallet과 SDKs는 다양한 서명 방식으로 transaction에 서명하기 위한 유연한 interface를 제공한다.
+
+<tabs><tabitem value="typescript" label="TypeScript"></tabitem></tabs>
+
+```typescript
+const keypair = Ed25519Keypair.deriveKeypair(TEST_MNEMONIC, `m/44'/784'/0'/0'/0'`);
+const address = keypair.getPublicKey().toSuiAddress();
+```
+
+<tabitem value="cli" label="CLI"></tabitem>
+
+```sh
+$ sui keytool import "TEST_MNEMONIC" ed25519 "m/44'/784'/0'/0'/0'"
+```
+
+```sh
+$ sui client new-address ed25519 "m/44'/784'/0'/0'/0'"
+```
+
+
+
+
+
+[Pure Ed25519](https://github.com/MystenLabs/sui/blob/f3b5fdd73da64a0df65fb4323471512b0f57ec4d/sdk/typescript/test/unit/cryptography/ed25519-keypair.test.ts) 또는 [ECDSA Secp256k1](https://github.com/MystenLabs/sui/blob/199f06d25ce85f0270a1a5a0396156bb2b83122c/sdk/typescript/test/unit/cryptography/secp256k1-keypair.test.ts)에 대한 더 많은 test vector는 이곳에서 확인할 수 있다.
