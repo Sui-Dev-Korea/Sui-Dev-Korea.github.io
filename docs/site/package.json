@@ -75,7 +75,6 @@
   "devDependencies": {
     "@babel/plugin-transform-react-jsx": "^7.23.4",
     "@docusaurus/core": "3.8.1",
-    "@docusaurus/plugin-client-redirects": "3.8.1",
     "@docusaurus/module-type-aliases": "3.8.1",
     "@docusaurus/preset-classic": "3.8.1",
     "@docusaurus/remark-plugin-npm2yarn": "3.8.1",

@@ -145,24 +145,6 @@ const config = {
     path.resolve(__dirname, `./src/plugins/framework`),
     path.resolve(__dirname, `./src/plugins/askcookbook`),
     path.resolve(__dirname, `./src/plugins/protocol`),
-    [
-      "@docusaurus/plugin-client-redirects",
-      {
-        createRedirects(existingPath) {
-          if (
-            existingPath.startsWith(
-              "/references/sui-api/sui-graphql/alpha/reference",
-            ) ||
-            existingPath.startsWith(
-              "/references/sui-api/sui-graphql/beta/reference",
-            )
-          ) {
-            return [`/ko${existingPath}`];
-          }
-          return undefined;
-        },
-      },
-    ],
   ],
   presets: [
     [
