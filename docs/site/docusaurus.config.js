@@ -23,6 +23,8 @@ const SIDEBARS_PATH = fileURLToPath(new URL("./sidebars.js", import.meta.url));
 
 require("dotenv").config();
 
+const koRedirectedPaths = new Set();
+
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: "Sui Documentation",
@@ -145,6 +147,27 @@ const config = {
     path.resolve(__dirname, `./src/plugins/framework`),
     path.resolve(__dirname, `./src/plugins/askcookbook`),
     path.resolve(__dirname, `./src/plugins/protocol`),
+    [
+      "@docusaurus/plugin-client-redirects",
+      {
+        createRedirects(existingPath) {
+          if (
+            existingPath.startsWith(
+              "/references/sui-api/sui-graphql/alpha/reference",
+            ) ||
+            existingPath.startsWith(
+              "/references/sui-api/sui-graphql/beta/reference",
+            )
+          ) {
+            const target = `/ko${existingPath}`;
+            if (koRedirectedPaths.has(target)) return undefined;
+            koRedirectedPaths.add(target);
+            return [target];
+          }
+          return undefined;
+        },
+      },
+    ],
   ],
   presets: [
     [
