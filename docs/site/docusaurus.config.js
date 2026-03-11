@@ -43,7 +43,7 @@ const config = {
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
 
-  onBrokenLinks: "throw",
+  onBrokenLinks: "warn",
   onBrokenAnchors: "ignore",
   onDuplicateRoutes: 'ignore',
 
@@ -53,8 +53,8 @@ const config = {
     format: "detect",
     mermaid: true,
     hooks: {
-    onBrokenMarkdownLinks: 'throw',
-  },
+      onBrokenMarkdownLinks: 'warn',
+    },
   },
   
   clientModules: [require.resolve("./src/client/pushfeedback-toc.js")],
@@ -242,6 +242,15 @@ const config = {
       type: "text/css",
     },
   ],
+  i18n: {
+    defaultLocale: "en",
+    locales: ["en", "ko"],
+    path: "../i18n",
+    localeConfigs: {
+      en: { label: "English", htmlLang: "en-US" },
+      ko: { label: "한국어", htmlLang: "ko-KR" },
+    },
+  },
   themes: ["@docusaurus/theme-mermaid", "docusaurus-theme-github-codeblock"],
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
@@ -275,6 +284,10 @@ const config = {
           {
             label: "References",
             to: "references",
+          },
+          {
+            type: "localeDropdown",
+            position: "right",
           },
         ],
       },

@@ -34,6 +34,7 @@ const standards = [
 			{
 				type: 'category',
 				label: 'Contract Information',
+				key: 'deepbookv3-contract-information',
 				link: {
 					type: 'doc',
 					id: 'standards/deepbookv3/contract-information',
@@ -54,6 +55,7 @@ const standards = [
 			{
 				type: 'category',
 				label: 'SDK',
+				key: 'deepbookv3-sdk',
 				link: {
 					type: 'doc',
 					id: 'standards/deepbookv3-sdk',
@@ -82,6 +84,7 @@ const standards = [
 			{
 				type: 'category',
 				label: 'Contract Information',
+				key: 'deepbook-margin-contract-information',
 				link: {
 					type: 'doc',
 					id: 'standards/deepbook-margin/contract-information',
@@ -101,6 +104,7 @@ const standards = [
 			{
 				type: 'category',
 				label: 'SDK',
+				key: 'deepbook-margin-sdk',
 				link: {
 					type: 'doc',
 					id: 'standards/deepbook-margin-sdk',
