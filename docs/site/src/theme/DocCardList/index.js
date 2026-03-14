@@ -8,16 +8,16 @@ import { useCurrentSidebarCategory } from '@docusaurus/theme-common';
 
 export default function DocCardListForCurrentSidebarCategory(props) {
   const scopeClass = 'docCardListScopeExclude';
+  // Root landing pages already serve as the overview, so hide the self-linking
+  // Overview card consistently in both the default locale and Korean locale.
+  const hiddenCardHrefs = ['', '/ko']
+    .flatMap((prefix) => ['/guides', '/concepts', '/references', '/standards']
+      .flatMap((path) => [`${prefix}${path}`, `${prefix}${path}/`]));
 
   const css = `
-    .${scopeClass} .col:has(a[href="/guides"]),
-    .${scopeClass} .col:has(a[href="/guides/"]),
-    .${scopeClass} .col:has(a[href="/concepts/"]),
-    .${scopeClass} .col:has(a[href="/concepts"]),
-    .${scopeClass} .col:has(a[href="/references/"]),
-    .${scopeClass} .col:has(a[href="/references"]),
-    .${scopeClass} .col:has(a[href="/standards/"]),
-    .${scopeClass} .col:has(a[href="/standards"])
+    ${hiddenCardHrefs
+      .map((href) => `.${scopeClass} .col:has(a[href="${href}"])`)
+      .join(',\n    ')}
      {
       display: none !important;
     }
