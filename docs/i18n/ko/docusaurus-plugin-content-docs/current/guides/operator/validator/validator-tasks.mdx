@@ -64,7 +64,7 @@ $ sudo rm -rf /opt/sui/db/authorities_db /opt/sui/db/consensus_db
 | `network.key` | ed25519 | state sync |
 | `worker.key` | ed25519 | 합의 (마이그레이션 예정) |
 
-이들은 [`sui-node` 구성 파일에서 설정된다.](./validator-config.mdx)
+이들은 `sui-node` configuration file에서 설정된다.
 
 ## Metrics
 
@@ -108,7 +108,7 @@ $ journalctl -u sui-node -f
 $ journalctl -u sui-node -g <SEARCH_TERM>
 ```
 
-- Docker Compose를 사용하는 경우, [README의 예시들](https://github.com/MystenLabs/sui/blob/main/nre/docker/README.md#logs)을 확인한다
+- Docker Compose를 사용하는 경우, [examples in the README](https://github.com/MystenLabs/sui/blob/main/nre/docker/README.md#logs)을 확인한다
 
 노드가 실행되는 동안 관리 인터페이스를 사용하여 로깅 구성을 변경할 수 있다.
 
@@ -203,7 +203,7 @@ $ sui client call --package 0x3 --module sui_system --function update_validator_
 $ sui client call --package 0x3 --module sui_system --function update_validator_next_epoch_p2p_address --args 0x5 "[4, 192, 168, 1, 1]" --gas-budget 10000
 ```
 
- [메타데이터 업데이트 기능의 전체 목록](https://github.com/MystenLabs/sui/blob/main/crates/sui-framework/packages/sui-system/sources/sui_system.move#L267-L444)을 확인한다.
+[full list of metadata update functions](https://github.com/MystenLabs/sui/blob/main/crates/sui-framework/packages/sui-system/sources/sui_system.move#L267-L444)을 확인한다.
 
 ### Operation Cap
 
