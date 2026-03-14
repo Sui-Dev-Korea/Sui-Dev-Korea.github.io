@@ -1,0 +1,66 @@
+---
+title: Sui RPC
+description: SuiJSON은 JSON 입력을 Move call 인자와 정렬할 수 있게 하는 JSON 기반 형식이다.
+keywords: [SuiJSON, json, json-based, json format, move call arguments, json inputs, move types, expected move types, move type mapping ]
+pagination_prev: null
+---
+
+:::info
+
+<ImportContent source="json-rpc-deprecation.mdx" mode="snippet" />
+
+:::
+
+:::info
+
+<ImportContent source="data-serving-msg.mdx" mode="snippet" />
+
+:::
+
+_SuiJSON_은 Sui가 JSON 입력을 Move call 인자에 더 가깝게 정렬할 수 있도록 제한을 두는 JSON 기반 형식이다.
+
+이 표는 JSON 타입을 SuiJSON과 호환되게 만들기 위해 JSON 타입에 적용되는 제한을 보여준다:
+
+| JSON | SuiJSON 제한 사항 | Move type 매핑 |
+| ---- | ----------------- | -------------- |
+| Number | 부호 없는 정수여야 함 | u8, u6, u32, u64 (String으로 인코딩됨), u128 (String으로 인코딩됨), u256 (String으로 인코딩됨) |
+| String | 제한 없음 | Vector`<u8>`, Address, ObjectID, TypeTag, Identifier, Unsigned integer (최대 256비트) |
+| Boolean | 제한 없음 | Bool |
+| Array | 동질적인 JSON이어야 하며 SuiJSON type이어야 함 | Vector |
+| Null | 허용되지 않음 | N/A |
+| Object | 허용되지 않음 | N/A |
+
+## Type coercion reasoning {#type-coercion-reasoning}
+
+JSON/SuiJSON의 느슨한 타입 특성과 Move type의 강한 타입 특성 때문에, 여러 Move type을 표현하기 위해 SuiJSON type에 오버로드가 필요한 경우가 있다.
+
+예를 들어 `SuiJSON::Number`는 _u8_과 _u32_를 모두 나타낼 수 있다.
+
+이는 type을 강제 변환해야 하고 때로는 변환도 해야 한다는 뜻이다.
+
+어떤 type을 강제 변환할지는 예상되는 Move type에 따라 달라진다.
+
+예를 들어 Move 함수가 u8을 기대한다면, 256 미만의 값을 가진 `SuiJSON::Number`를 받아야 한다.
+
+더 중요한 점은 JSON에서는 Move address를 쉽게 표현할 방법이 없으므로, 이를 `0x` 접두사가 붙은 16진 문자열로 인코딩한다는 점이다.
+
+또한 Move는 u128과 u256을 지원하지만 JSON은 그렇지 않다.
+
+그 결과 Sui는 숫자를 문자열로 인코딩하는 것을 허용한다.
+
+## Type coercion rules {#type-coercion-rules}
+
+| Move Type | SuiJSON Representations | Valid Examples | Invalid examples |
+| :-------: | :---------------------- | :------------: | :-------------- |
+| Bool | Bool | true, false | |
+| u8 | 3가지 형식을 지원함: 256 미만의 부호 없는 숫자, 값이 256 미만인 10진 문자열, `0x` 접두사가 붙은 1바이트 16진 문자열 | 7 "70" "0x43" | -5: 음수는 허용되지 않음 3.9: float는 허용되지 않음 NaN: 허용되지 않음 300: U8은 256 미만이어야 함 " 9": 문자열 안 공백은 허용되지 않음 "9A": 16진수는 `0x` 접두사가 있어야 함 "0x09CD": U8에 비해 너무 큼 |
+| u16 | 3가지 형식을 지원함: 65536 미만의 부호 없는 숫자, 값이 65536 미만인 10진 문자열, `0x` 접두사가 붙은 2바이트 16진 문자열 | 712 "570" "0x423" | -5: 음수는 허용되지 않음 3.9: float는 허용되지 않음 NaN: 허용되지 않음 98342300: U16은 65536 미만이어야 함 " 19": 문자열 안 공백은 허용되지 않음 "9EA": 16진수는 `0x` 접두사가 있어야 함 "0x049C1D": U16에 비해 너무 큼 |
+| u32 | 3가지 형식을 지원함: 4294967296 미만의 부호 없는 숫자, 값이 4294967296 미만인 10진 문자열, `0x` 접두사가 붙은 1바이트 16진 문자열 | 9823247 "987120" "0x4BADE93" | -5: 음수는 허용되지 않음 3.9: float는 허용되지 않음 NaN: 허용되지 않음 123456789123456: U32는 4294967296 미만이어야 함 " 9": 문자열 안 공백은 허용되지 않음 "9A": 16진수는 `0x` 접두사가 있어야 함 "0x3FF1FF9FFDEFF": U32에 비해 너무 큼 |
+| u64 | 2가지 형식을 지원함: 값이 U64::MAX 미만인 10진 문자열, `0x` 접두사가 붙은 최대 8바이트 16진 문자열 | "747944370" "0x2B1A39A15E" | 123434: 이는 유효한 U64 숫자이지만 문자열로 인코딩해야 함 |
+| u128 | 2가지 형식을 지원함: 값이 U128::MAX 미만인 10진 문자열, `0x` 접두사가 붙은 최대 16바이트 16진 문자열 | "74794734937420002470" "0x2B1A39A1514E1D8A7CE" | 34: 이는 유효한 U128 숫자이지만 문자열로 인코딩해야 함 |
+| u256 | 2가지 형식을 지원함: 값이 U256::MAX 미만인 10진 문자열, `0x` 접두사가 붙은 최대 32바이트 16진 문자열 | "747947349374200024707479473493742000247" "0x2B1762FECADA39753FCAB2A1514E1D8A7CE" | 123434: 이는 유효한 U256 숫자이지만 문자열로 인코딩해야 함 0xbc33e6e4818f9f2ef77d020b35c24be738213e64d9e58839ee7b4222029610de |
+| Address | `0x` 접두사가 붙은 32바이트 16진 문자열 | "0xbc33e6e4818f9f2ef77d020b35c24be738213e64d9e58839ee7b4222029610de" | 0xbc33: 문자열이 너무 짧음 bc33e6e4818f9f2ef77d020b35c24be738213e64d9e58839ee7b4222029610de: `0x` 접두사 누락 0xG2B1A39A1514E1D8A7CE45919CFEB4FEE70B4E01: 유효하지 않은 16진 문자 G |
+| ObjectID | `0x` 접두사가 붙은 32바이트 16진 문자열 | "0x1b879f00b03357c95a908b7fb568712f5be862c5cb0a5894f62d06e9098de6dc" | 위와 유사함 |
+| Identifier | 일반적으로 module 및 function 이름에 사용됨: 다음 중 하나로 인코딩됨: 첫 문자가 문자이고 나머지 문자가 문자, 숫자 또는 밑줄인 String, 또는 첫 문자가 밑줄이고 그 뒤에 적어도 하나의 문자, 숫자 또는 밑줄이 있는 String | "function", "\_function", "some_name", "\_\_\_\_some_name", "Another" | "\_": 뒤따르는 밑줄, 숫자 또는 문자가 없음, "8name": 숫자로 시작할 수 없음, ".function": 마침표로 시작할 수 없음, " ": 빈 공백일 수 없음, "func name": 공백을 포함할 수 없음 |
+| Vector`<Move Type>` / Option`<Move Type>` | 앞서 언급한 type의 동질적인 vector이며 원시 type의 중첩 vector를 포함하고, ObjectID의 "flat" vector만 허용됨 | [1,2,3,4]: 단순 U8 vector [[3,600],[],[0,7,4]]: 중첩 U32 vector ["0x2B1A39A1514E1D8A7CE45919CFEB4FEE", "0x2B1A39A1514E1D8A7CE45919CFEB4FEF"]: ObjectID vector | [1,2,3,false]: 동질적인 JSON이 아님 [1,2,null,4]: 유효하지 않은 요소 [1,2,"7"]: Sui가 숫자를 문자열로 인코딩하는 것을 허용하므로 이 배열은 [1,2,7]로 평가될 수 있지만, 배열이 여전히 모호하므로 동질성 검사에 실패함 |
+| Vector`<u8>` | 편의를 위해 Sui는 UTF-8 및 ASCII 문자열로 표현된 U8 vector를 허용함 | "√®ˆbo72 √∂†∆˚–œ∑π2ie": UTF-8 "abcdE738-2 \_=?": ASCII | |

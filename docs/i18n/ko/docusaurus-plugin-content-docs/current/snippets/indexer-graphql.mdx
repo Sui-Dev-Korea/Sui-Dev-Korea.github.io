@@ -1,0 +1,27 @@
+GraphQL과 `sui-indexer-alt`(Indexer) 스택은 [Sui data access infrastructure](/concepts/data-access/data-serving.mdx)의 일부이다.
+
+이 스택은 확장 가능하고 범용적인 indexer를 기반으로 하는 고성능 GraphQL 서비스를 통해 온체인 데이터 접근을 제공한다.
+
+이 스택은 Sui network 전반에서 유연한 query, 구조화된 출력, 그리고 데이터에 대한 과거 접근(configurable retention 포함)이 필요한 개발자에게 최적화되어 있다.
+
+GraphQL은 owned object, transaction history, 특정 onchain attribute 등을 가져오는 것처럼 구조화된 데이터에 대해 풍부한 query pattern이 필요한 애플리케이션에 적합하다.
+
+GraphQL 서비스는 서로 다른 Indexer pipeline이 병렬로 갱신하는 Postgres 호환 database 위에서 실행된다.
+
+General-purpose Indexer에는 Sui 원격 checkpoint store와 full node에서 데이터를 추출하는 configurable checkpoint 기반 pipeline이 포함된다.
+
+이 pipeline은 처리된 데이터를 GraphQL query 접근에 최적화된 database에 기록한다.
+
+GraphQL 서비스와 Indexer는 together builders, wallet developers, explorers, 그리고 indexer/data providers를 위한 모듈식의 production-ready 데이터 스택을 제공한다.
+
+:::info
+
+<ImportContent source="json-rpc-deprecation.mdx" mode="snippet" />
+
+:::
+
+:::info
+
+<ImportContent source="data-serving-msg.mdx" mode="snippet" />
+
+:::

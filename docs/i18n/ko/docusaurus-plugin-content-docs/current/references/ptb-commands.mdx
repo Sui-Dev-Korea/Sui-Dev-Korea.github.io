@@ -1,0 +1,115 @@
+---
+title: PTB Commands
+description: 이 주제는 각 PTB command와 그 형식, 반환 타입, 시그니처를 설명한다.
+keywords: [ programmable transaction blocks, transaction blocks, program transaction blocks, PTB, PTBs, what are PTBs, what is PTB, transaction group, programmable group of transactions, program transaction block, block of transactions, group of transactions ]
+---
+
+다음 섹션은 각 PTB command를 설명한다. 표시된 command 시그니처는 개념적인 Move 표현이며, 이러한 연산은 항상 표준 Move 함수로 표현할 수 있는 것은 아니다.
+
+#### `TransferObjects`
+
+**Form:** `TransferObjects(ObjectArgs, AddressArg)`
+
+하나 이상의 object를 지정된 address로 보낸다.
+
+- `ObjectArgs: [Argument]`: object의 vector이며 타입은 아무 것이나 가능하다. 값으로 전달된다.
+
+- `AddressArg: Argument`: `Pure` input 또는 result에서 온 대상 address이다. 값으로 전달된다.
+
+**Returns:** 비어 있는 result vector이다.
+
+**Signature:** `(vector<forall T: key + store. T>, address): ()`
+
+#### `SplitCoins`
+
+**Form:** `SplitCoins(CoinArg, AmountArgs)`
+
+하나의 coin에서 하나 이상의 coin을 분리한다.
+
+- `CoinArg: Argument`: `sui::coin::Coin<T>` 타입의 coin이며 모든 coin 타입이 가능하다. mutable reference로 전달된다.
+
+- `AmountArgs: [Argument]`: 분할 amount에 대한 `u64` 값이다. 값으로 전달되며 복사된다.
+
+**Returns:** amount 개수에 맞는 `sui::coin::Coin<T>` coin의 vector이다.
+
+**Signature:** `<T: key + store>(coin: &mut sui::coin::Coin<T>, amounts: vector<u64>): vector<sui::coin::Coin<T>>`
+
+#### `MergeCoins`
+
+**Form:** `MergeCoins(CoinArg, ToMergeArgs)`
+
+여러 coin을 하나의 coin으로 합친다.
+
+- `CoinArg: Argument`: 대상 coin이며 타입은 `sui::coin::Coin<T>`이고 모든 coin 타입이 가능하다. mutable reference로 전달된다.
+
+- `ToMergeArgs: [Argument]`: 합칠 `sui::coin::Coin<T>` 타입의 coin들이다. 값으로 전달되며 이동된다.
+
+**Returns:** 비어 있는 result vector이다.
+
+**Signature:** `<T: key + store>(coin: &mut sui::coin::Coin<T>, to_merge: vector<sui::coin::Coin<T>>): ()`
+
+#### `MakeMoveVec`
+
+**Form:** `MakeMoveVec(VecTypeOption, Args)`
+
+Move 값의 vector를 생성하며 비어 있을 수도 있다.
+
+- `VecTypeOption: Option<TypeTag>`: element에 대한 선택적 타입 지정자이다. non-object 타입 또는 빈 vector에는 반드시 지정해야 한다.
+
+- `Args: [Argument]`: vector element이며 타입은 아무 것이나 가능하다. 값으로 전달되며 `T: copy`이면 복사되고 그렇지 않으면 이동된다.
+
+**Returns:** `vector<T>` 타입의 단일 result이다. element는 `NestedResult`로 개별 접근할 수 없으며, 전체 vector를 사용하거나 Move 코드 안에서 `MoveCall`을 통해 element에 접근해야 한다.
+
+**Signature:** `(T...): vector<T>`
+
+#### `MoveCall`
+
+**Form:** `MoveCall(Package, Module, Function, TypeArgs, Args)`
+
+publish된 package의 `entry` 또는 `public` Move 함수를 호출한다.
+
+- `Package: ObjectID`: package의 Object ID이다.
+
+- `Module: String`: module 이름이다.
+
+- `Function: String`: function 이름이다.
+
+- `TypeArgs: [TypeTag]`: function의 타입 parameter를 만족하는 타입 argument이다.
+
+- `Args: [Argument]`: function 시그니처에 맞는 argument이다.
+
+**Returns:** function 시그니처에 따라 개수가 동적으로 정해지는 result이다.
+
+다른 command와 달리 argument 사용 방식과 result 개수는 호출되는 Move 함수에 따라 달라진다.
+
+#### `Publish`
+
+**Form:** `Publish(ModuleBytes, TransitiveDependencies)`
+
+새 package를 생성하고 각 module의 `init` 함수를 호출한다.
+
+- `ModuleBytes: [[u8]]`: publish되는 module의 bytes이며 각 `[u8]`가 하나의 module이다.
+
+- `TransitiveDependencies: [ObjectID]`: 버전 선택을 위한 package dependency의 Object ID이다.
+
+**Returns:** 새로 publish된 package에 대한 `sui::package::UpgradeCap` 타입의 단일 result이다.
+
+검증 후에는 각 module의 `init` 함수가 module byte vector와 같은 순서로 호출된다.
+
+#### `Upgrade`
+
+**Form:** `Upgrade(ModuleBytes, TransitiveDependencies, Package, UpgradeTicket)`
+
+기존 package를 업그레이드한다. 업그레이드된 module에 대해서는 `init` 함수가 호출되지 않는다.
+
+- `ModuleBytes: [[u8]]`: 업그레이드된 module의 bytes이다.
+
+- `TransitiveDependencies: [ObjectID]`: package dependency의 Object ID이다.
+
+- `Package: ObjectID`: 업그레이드할 package의 Object ID이며 반드시 존재하고 최신 버전이어야 한다.
+
+- `UpgradeTicket: sui::package::UpgradeTicket`: `sui::package::UpgradeCap`에서 생성된 upgrade ticket이다. 값으로 전달되며 이동된다.
+
+**Returns:** upgrade의 증명을 제공하는 `sui::package::UpgradeReceipt` 타입의 단일 result이다.
+
+upgrade의 자세한 내용은 [Upgrading Packages](/guides/developer/packages/upgrade.mdx)를 참조한다.

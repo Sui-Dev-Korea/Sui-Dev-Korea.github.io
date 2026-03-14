@@ -1,0 +1,186 @@
+<Tabs>
+<TabItem label="macOS" value="macos">
+
+대부분의 최신 MacOS 시스템에는 Homebrew와 cURL이 사전 설치되어 있다.
+
+- [x] [Homebrew](https://brew.sh/)를 다운로드하여 설치한다:
+  <div className="pl-8">
+    ```sh
+    $ /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    ```
+  </div>
+
+- [x] CMake를 다운로드하여 설치한다:
+  <div className="pl-8">
+    ```sh
+    $ brew install cmake
+    ```
+    다음으로 설치를 확인한다
+    ```sh
+    $ cmake --version
+    ```
+  </div>
+
+- [x] **libpq**를 다운로드하여 설치한다:
+  <div className="pl-8">
+    ```sh
+    $ brew install libpq
+    ```
+    다음으로 설치를 확인한다
+    ```sh
+    $ libpq --version
+    ```
+  </div>
+
+- [x] [PostgreSQL](https://wiki.postgresql.org/wiki/Main_Page)을 다운로드하여 설치한다.
+
+</TabItem>
+
+<TabItem label="Linux" value="linux">
+
+이 사전 요구 사항은 Linux용 `apt` package manager를 사용한다. 사용하는 package manager에 맞게 command를 조정한다.
+
+:::tip
+다음 command를 사용하면 Linux용 사전 요구 사항을 한 번에 모두 설치할 수 있다:
+
+<ImportContent source="linux-deps.mdx" mode="snippet" />
+:::
+
+- [x] Rust를 다운로드하여 설치한다:
+  <div className="pl-8">
+    ```sh
+    $ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    ```
+    Rust가 이미 설치되어 있다면 최신 version으로 업데이트한다:
+    ```sh
+    $ rustup update stable
+    ```
+  </div>
+
+- [x] Cargo를 다운로드하여 설치한다
+  <div className="pl-8">
+    ```sh
+    $ curl https://sh.rustup.rs -sSf | sh
+    ```
+  </div>
+- [x] cURL을 다운로드하여 설치한다:
+  <div className="pl-8">
+    ```sh
+    $ sudo apt-get install curl
+    ```
+    다음으로 설치를 확인한다
+    ```sh
+    $ curl --version
+    ```
+  </div>
+- [x] Git CLI를 다운로드하여 설치한다:
+  <div className="pl-8">
+    ```sh
+    $ sudo apt-get install git-all
+    ```
+    다음으로 설치를 확인한다
+    ```sh
+    $ git --version
+    ```
+  </div>
+- [x] CMake를 다운로드하여 설치한다:
+  <div className="pl-8">
+    ```sh
+    $ sudo apt-get install cmake
+    ```
+    
+    다음으로 설치를 확인한다
+
+    ```sh
+    $ cmake --version
+    ```
+  </div>
+- [x] GCC를 다운로드하여 설치한다:
+
+  <div className="pl-8">
+    ```sh
+    $ sudo apt-get install gcc
+    ```
+    다음으로 설치를 확인한다
+    ```sh
+    $ gcc --version
+    ```
+  </div>
+
+- [x] **libssl-dev**를 다운로드하여 설치한다:
+
+  <div className="pl-8">
+    ```sh
+    $ sudo apt-get install libssl-dev
+    ```
+    사용하는 Linux version이 **libssl-dev**를 지원하지 않으면 [ROS Index](https://index.ros.org/d/libssl-dev/)에서 해당하는 동등 package를 찾는다.
+
+    OpenSSL이 있다면 **pkg-config**도 추가로 설치해야 할 수 있다:
+    ```sh
+    $ sudo apt-get install pkg-config
+    ```
+  </div>
+
+- [x] **libclang-dev**를 다운로드하여 설치한다:
+  <div className="pl-8">
+
+    ```sh
+    $ sudo apt-get install libclang-dev
+    ```
+
+    사용하는 Linux version이 **libclang-dev**를 지원하지 않으면 [ROS Index](https://index.ros.org/d/libclang-dev/)에서 해당하는 동등 package를 찾는다.
+
+  </div>
+
+- [x] `sui start`와 함께 `--with-indexer` 및 `--with-graphql` 옵션을 사용할 계획이라면 **libpq-dev**를 다운로드하여 설치한다:
+  <div className="pl-8">
+
+    ```sh
+    $ sudo apt-get install libpq-dev
+    ```
+
+    자세한 내용은 [Local Network](/guides/developer/getting-started/local-network.mdx)를 참고한다.
+
+    사용하는 Linux version이 **libpq-dev**를 지원하지 않으면 [ROS Index](https://index.ros.org/d/libpq-dev/)에서 해당하는 동등 package를 찾는다.
+
+  </div>
+
+- [x] **build-essential**을 다운로드하여 설치한다:
+  <div className="pl-8">
+    ```sh
+    $ sudo apt-get install build-essential
+    ```
+  </div>
+
+</TabItem>
+
+<TabItem label="Windows" value="windows">
+
+- [x] Windows 11에는 Microsoft 버전의 [cURL](https://curl.se/windows/microsoft.html)이 이미 설치되어 있지만, Windows 10을 사용하거나 대신 cURL project version을 사용하려면 [https://curl.se/windows/](https://curl.se/windows/)에서 다운로드하여 설치한다.
+
+- [x] [Git command line interface](https://git-scm.com/download/)를 다운로드하여 설치한다.
+
+- [x] [CMake](https://cmake.org/download/)를 다운로드하여 설치한다.
+
+- [x] [LLVM Compiler Infrastructure](https://releases.llvm.org/)를 다운로드하여 설치한다. 64비트 Windows용 `LLVM-15.0.7-win64.exe` 또는 32비트 Windows용 `LLVM-15.0.7-win32.exe`와 비슷한 이름의 파일을 찾는다.
+
+- [x] Rust를 다운로드하기 전에 [C++ build tools](https://visualstudio.microsoft.com/downloads/)를 다운로드하여 설치한다.
+
+- [x] Rust를 다운로드하여 설치한다.
+  <div className="pl-8">
+  Windows 11을 사용한다면 Rust 웹사이트의 [Rust installer](https://www.rust-lang.org/tools/install) 사용 정보를 참고한다. installer는 C++ build tool을 확인하고 필요하면 설치를 안내한다. 자신의 environment를 가장 잘 정의하는 옵션을 선택하고 install wizard의 지침을 따른다.
+
+  Rust가 이미 설치되어 있다면 최신 version으로 업데이트한다:
+  ```sh
+  $ rustup update stable
+  ```
+  </div>
+
+- [x] Cargo를 다운로드하여 설치한다: [`rustup-init.exe`](https://win.rustup.rs/)를 다운로드하여 설치한다
+
+- [x] [Protocol Buffers](https://github.com/protocolbuffers/protobuf/releases)(`protoc-xx.x-win32.zip` 또는 `protoc-xx.x-win64.zip`)를 다운로드하고 `\bin` 디렉터리를 Windows `PATH` environment variable에 추가한다.
+
+- [x] Windows on ARM64 전용: [Visual Studio 2022 Preview](https://visualstudio.microsoft.com/vs/preview/)를 다운로드하여 설치한다.
+
+</TabItem>
+</Tabs>

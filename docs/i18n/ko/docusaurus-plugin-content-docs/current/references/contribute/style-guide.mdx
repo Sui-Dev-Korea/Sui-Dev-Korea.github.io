@@ -149,17 +149,15 @@ keywords:
 
 ##### Quotation marks
 
-따옴표를 사용하지 않는다.
+단 하나의 예외인 "Hello, World!"를 제외하고는 따옴표를 사용하지 않는다.
+
+##### Ampersands
+
+콘텐츠에서 `and`를 대신하기 위해 앰퍼샌드(`&`)를 사용하지 않는다. `and`라는 단어가 접근성이 더 높고 일부 프로그래밍 사용 사례에서 오류 가능성이 더 낮기 때문이다.
 
 ##### Exclamations
 
-느낌표를 사용하지 않는다. 다음과 같이 흥분을 표현하고 싶다면:
-
-> Congratulations! You've finished the tutorial.
-
-대신 confetti 이모지를 사용한다:
-
-> Congratulations, you've finished the tutorial. 🎉
+느낌표를 사용하지 않는다.
 
 ---
 
@@ -283,23 +281,67 @@ keywords:
 
 ## Body text styling
 
+#### Em dashes {#em-dashes}
+
+문서에서 em dash(—)를 사용하지 않는다. 문장을 다시 써서 이를 피한다. 대신 쉼표, 괄호를 사용하거나 문장을 둘로 나눈다.
+
 #### Bold text
 
-버튼, 메뉴 항목, 필드 레이블 및 명령과 같이 화면에 나타나는 UI 요소에 굵게를 사용한다.
+목록에서 용어와 정의를 구분하려면 굵게를 사용한다. 이 규칙은 용어 뒤에 콜론(:)이 올 때만 적용하며, 용어나 구가 문장 전체의 일부일 때는 적용하지 않는다.
+
+> ✅ - **gRPC**: Replaces JSON-RPC on full nodes.
+
+> ❌ - **Do not share your recovery phrase**, as this is important for recovering your wallet.
 
 > 예시: Click **Save** to store your changes.
 
 강조를 위해 굵게를 드물게 사용하고 명확성을 위해 필요한 경우에만 사용한다. 본문 텍스트에서 일반적인 강조를 위해 굵게를 남용하지 않는다.
 
+##### UI elements
+
+버튼, 메뉴 항목, 필드 레이블, command처럼 화면에 보이는 UI 요소에는 굵게를 사용한다.
+
+##### Port numbers
+
+포트 참조는 **port NUMBER** 형식으로 굵게 표시하며, 예를 들어 **port 3000** 또는 **port 8080**과 같이 쓴다.
+
+#### Keyboard button text
+
+키보드의 실제 버튼에 해당하는 텍스트에는 `<kbd>` 태그를 사용한다.
+
+<Tabs>
+<TabItem value="example" label="Example" default>
+
+Press <kbd>0</kbd>, <kbd>1</kbd>, or <kbd>2</kbd> to select a key scheme and then press <kbd>Enter</kbd>.
+
+</TabItem>
+
+<TabItem value="markdown" label="Markdown">
+
+```
+Press <kbd>0</kbd>, <kbd>1</kbd>, or <kbd>2</kbd> to select a key scheme and then press <kbd>Enter</kbd>.
+```
+
+</TabItem>
+</Tabs>
+
 #### Italic text
 
-처음으로 새 용어를 도입할 때 이탤릭체를 사용한다.
+이탤릭체 사용은 피한다.
 
-> 예시: The term for the cost of processing transaction blocks is *gas*.
+페이지에서 처음 정의해야 하는 용어는 대신 Glossary component를 사용해야 한다.
 
 #### Slashes {#slashes}
 
 True / False 또는 True/False와 같이 "and" 또는 "or" 대신 슬래시를 사용하지 않는다. True or False를 사용하거나, 코드 문서에서 True | False를 사용한다.
+
+#### Variables
+
+독자가 교체해야 하는 placeholder variable에는 `NETWORK_NAME` 또는 `YOUR_API_KEY`처럼 밑줄이 있는 대문자를 사용한다.
+
+페이지 안에서는 variable 이름을 일관되게 유지한다.
+
+동일한 값을 가리키는데 `NETWORK`와 `NETWORK_NAME`을 번갈아 사용하지 않는다.
 
 ---
 
@@ -484,22 +526,6 @@ Sui Explorer supports the following browsers:
 </TabItem>
 </Tabs>
 
-#### Related links list
-
-페이지 하단에서 관련 링크 목록을 통해 독자를 추가 관련 콘텐츠로 안내할 수 있다. `RelatedLink` 컴포넌트를 사용한다:
-
-External links:
-
-```jsx
-<RelatedLink href="/path/to/page" label="Page Title" desc="Description of page." />
-```
-
-Internal links:
-
-```jsx
-<RelatedLink to="/guides/somepage.mdx" />
-```
-
 #### Attribute lists
 
 object와 같은 컴포넌트의 속성을 나열하기 위해 인라인 코드 포맷이 있는 목록을 사용한다.
@@ -562,34 +588,6 @@ Metric name | 10 | X | Text string.
 ```
 
 | **Column one** | **Column two** | **Column three** | **Column four** |
-
-```
-
-
-
-
-
-</TabItem>
-</Tabs>
-
-#### Table alignment {#table-alignment}
-
-Heading 행의 레이블을 가운데 정렬한다. 텍스트 문자열은 왼쪽 정렬한다. 값과 X 또는 체크마크는 가운데 정렬한다.
-
-<Tabs>
-<TabItem value="example" label="Example" default>
-
-**Column one** | **Column two** | **Column three** | **Column four**
-:-- | :-: | :-: | :--
-Metric name | 10 | X | Text string.
-
-</TabItem>
-<TabItem value="markdown" label="Markdown">
-
-```
-
-| **Column one** | **Column two** | **Column three** | **Column four** |
-| :--- | :---: | :---: | :--- |
 
 ```
 
@@ -707,9 +705,134 @@ module satoshi_flip::house_data {
 </TabItem>
 </Tabs>
 
+#### Sourcing code samples {#sourcing-code-samples}
+
+가능하면 code를 인라인으로 복사하지 말고 `<ImportContent>` component를 사용해 원래 GitHub repository에서 source code sample을 직접 가져온다.
+
+이렇게 하면 sample이 source와 동기화된 상태를 유지하고 유지보수 부담을 줄일 수 있다.
+
+```mdx
+<ImportContent source="src/lib/walrus.ts" mode="code" org="MystenLabs" repo="walrus-sdk-relay-example-app" />
+```
+
+`fun`, `struct`, `variable` 등의 targeting attribute를 사용해 전체 파일이 아니라 특정 code component를 추출할 수 있다.
+
+이렇게 하면 표시되는 snippet과 source의 최신 version 사이 드리프트를 막을 수 있다.
+
+| **Attribute** | **Type** | **Description** |
+| :--- | :--- | :--- |
+| `source` | String | 저장소 안 파일의 경로이다. `mode="snippet"`이면 `/snippets` 아래 경로이고, `mode="code"`이면 `packages/foo/src/x.ts`와 같은 repo 상대 경로이다. |
+| `mode` | `"snippet"` \| `"code"` | 파일을 code block으로 렌더링하려면 `code`를 사용하고, 로컬 snippets 디렉터리에서 가져오려면 `snippet`을 사용한다. |
+| `org` | String | 저장소를 소유한 GitHub organization이다. |
+| `repo` | String | GitHub repository 이름이다. |
+| `ref` | String | 가져올 git ref(branch, tag, 또는 commit SHA)이다. 기본값은 저장소의 기본 branch이다. |
+| `language` | String | code block의 syntax highlighting 언어이다. `code` mode에서만 적용된다. |
+| `tag` | String | `docs::` comment 형식을 사용해 특정 tagged block을 대상으로 삼는다. |
+| `fun` | String | 이름으로 특정 function을 대상으로 삼는다. |
+| `variable` | String | 이름으로 특정 variable을 대상으로 삼는다. |
+| `struct` | String | 이름으로 특정 struct를 대상으로 삼는다. |
+| `impl` | String | 이름으로 특정 `impl` block을 대상으로 삼는다. |
+| `type` | String | 이름으로 특정 type alias를 대상으로 삼는다. |
+| `trait` | String | 이름으로 특정 trait를 대상으로 삼는다. |
+| `enumeration` | String | 이름으로 특정 enum을 대상으로 삼는다. |
+| `module` | String | 이름으로 특정 module을 대상으로 삼는다. |
+| `component` | String | 이름으로 특정 component를 대상으로 삼는다. |
+| `dep` | String | 특정 dependency block을 대상으로 삼는다. |
+| `test` | String | 이름으로 특정 test block을 대상으로 삼는다. |
+| `highlight` | String | 렌더링된 code block에서 특정 줄 또는 범위를 강조한다. |
+| `signatureOnly` | Boolean | 포함되면 전체 body 대신 function signature만 표시한다. |
+| `noComments` | Boolean | 포함되면 출력에서 모든 code comment를 제거한다. |
+| `noTests` | Boolean | 포함되면 test block을 제외한다. |
+| `noTitle` | Boolean | 포함되면 code block header의 filename title을 생략한다. |
+| `style` | String | 렌더링된 code block container에 custom inline style을 적용한다. |
+
 ## Procedures, tasks, and instructions {#procedures-tasks-instructions}
 
 절차를 부정사 동사로 도입한다. 번호 매기기 또는 순서가 있는 목록을 사용하여 절차를 포맷한다.
+
+### Single-procedure pages {#single-procedure}
+
+페이지에 단일한 step-by-step 지침 집합이 들어 있을 때는 `##step` component를 사용해 step을 렌더링한다.
+
+이렇게 하면 독립적인 절차에 일관된 시각적 스타일을 제공할 수 있다.
+
+<Tabs>
+<TabItem value="example" label="Example" default>
+
+##step
+Install the CLI.
+
+##step
+Configure your wallet.
+
+##step
+Deploy the contract.
+
+</TabItem>
+<TabItem value="markdown" label="Markdown">
+
+```mdx
+##step
+Install the CLI.
+
+##step
+Configure your wallet.
+
+##step
+Deploy the contract.
+```
+
+</TabItem>
+</Tabs>
+
+### Multiple-procedure pages {#multiple-procedures}
+
+페이지에 여러 개의 step-by-step 지침 집합이 들어 있을 때, 예를 들어 운영 체제별 설치 절차나 서로 다른 workflow가 여러 개 있을 때는 각 절차의 step을 구분하기 위해 H5 heading(`#####`)을 사용한다.
+
+이렇게 하면 여러 그룹에 걸친 step이 시각적으로 구분된다.
+
+<Tabs>
+<TabItem value="example" label="Example" default>
+
+### Install on macOS
+
+##### Step 1: Install dependencies
+...
+
+##### Step 2: Run the installer
+...
+
+### Install on Linux
+
+##### Step 1: Update package lists
+...
+
+##### Step 2: Run the installer
+...
+
+</TabItem>
+<TabItem value="markdown" label="Markdown">
+
+```
+### Install on macOS
+
+##### Step 1: Install dependencies
+...
+
+##### Step 2: Run the installer
+...
+
+### Install on Linux
+
+##### Step 1: Update package lists
+...
+
+##### Step 2: Run the installer
+...
+```
+
+</TabItem>
+</Tabs>
 
 #### Keyboard keys in procedures {#keyboard-keys-procedures}
 
@@ -752,6 +875,44 @@ To get the latest version of the Sui Wallet extension:
 
 ---
 
+## Prerequisites {#prerequisites}
+
+절차를 시작하기 전에 독자가 설치, 구성, 또는 완료해야 하는 항목을 나열하려면 prerequisites section을 사용한다.
+
+### Sui docs {#prerequisites-sui}
+
+Sui documentation 페이지에서는 prerequisites에 다음 tab component를 사용한다:
+
+```mdx
+<Tabs className="tabsHeadingCentered--small">
+<TabItem value="prereq" label="Prerequisites">
+
+- [x] Prerequisite one
+- [x] Prerequisite two
+
+</TabItem>
+</Tabs>
+```
+
+### Walrus docs {#prerequisites-walrus}
+
+Walrus documentation 페이지에서는 prerequisites에 다음 outlined tab component를 사용한다:
+
+```mdx
+<div className="outlined-tabs">
+
+<Tabs>
+<TabItem value="prereq" label="Prerequisites">
+
+- [x] Prerequisite one
+- [x] Prerequisite two
+
+</TabItem>
+</Tabs>
+
+</div>
+```
+
 ## Links and references
 
 [docs.sui.io]의 주제에 링크할 때 항상 전체 상대 링크를 사용한다.
@@ -780,37 +941,9 @@ To learn more, see [Examples of Sui Smart Contracts](/guides/developer/app-examp
 
 인라인 링크를 사용할 때 대상 주제 타이틀의 키워드를 사용한다.
 
-<Tabs>
-<TabItem value="example" label="Example" default>
-
-> Before you install Sui, make sure to install the [prerequisites](/guides/developer/getting-started/sui-install.mdx#prerequisites).
-
-</TabItem>
-<TabItem value="markdown" label="Markdown">
-
-```
-
-Before you install Sui, make sure to install the [prerequisites](/guides/developer/getting-started/sui-install.mdx#prerequisites).
-
-```
-</TabItem>
-</Tabs>
-
 ### URLs and web addresses {#urls-web-addresses}
 
 설명적인 텍스트로 사이트나 URL에 대한 링크를 만든다. 예제 코드나 구성 파일에서와 같이 독자가 복사해야 하는 경우에만 URL을 제공한다.
-
-### Referring to pages in our docs {#referring}
-
-문서 세트의 페이지를 "topic"으로 참조한다. "guide"는 여러 관련 주제로 구성될 수 있다.
-
-> 예시: See the Install topic in the Validator guide for more information.
-
-:::info
-
-주제를 타이틀로 참조하는 것이 적합한 경우도 있다. 자세한 내용은 Installing Sui를 참고한다.
-
-:::
 
 ---
 
@@ -1071,26 +1204,72 @@ Navigate into your home directory after installing the IDE.
 
 #### Mermaid for images in Markdown {#mermaid}
 
-[Mermaid를 사용하여](https://github.blog/2022-02-14-include-diagrams-markdown-files-mermaid/) Markdown에서 직접 플로우차트와 유사한 이미지를 만들 수 있다.
+Markdown에서 직접 플로우차트와 유사한 이미지를 [using Mermaid](https://github.blog/2022-02-14-include-diagrams-markdown-files-mermaid/)로 만들 수 있다.
 
 ---
 
 ## Index pages
 
-섹션 인덱스 페이지는 하위 카테고리 인덱스 페이지가 존재하면 반드시 링크해야 한다. 이는 사용자가 사이드바에만 의존하지 않고 하위 섹션으로 쉽게 탐색할 수 있도록 하고 일관된 탐색 구조를 만든다.
+Index page는 카테고리용 landing page를 제공하고 사용자가 사이드바에만 의존하지 않고 섹션 안쪽으로 더 깊게 탐색할 수 있게 해준다.
 
-예를 들어 docs 폴더가 다음과 같은 경우:
+또한 docs의 각 카테고리에 대해 표준화된 형식을 제공하고 모바일 브라우저에서의 탐색을 개선한다.
+
+모든 sidebar 카테고리는 해당 카테고리가 `link.type: 'doc'`를 사용할 때 대응하는 index page를 반드시 가져야 한다.
+
+이 규칙은 중첩 카테고리를 포함한 문서 계층의 모든 level에 적용된다.
 
 ```
-/docs/
-  guides/
-    index.mdx
-    setup/
-      index.mdx
-      install.mdx
+{
+  type: 'doc',
+  label: 'Section',
+  id: 'section/index',
+},
+{
+  type: 'category',
+  label: 'Category',
+  link: {
+    type: 'doc',
+    id: 'section/category/index',
+  },
+  items: [
+    {
+      type: 'category',
+      label: 'Subcategory',
+      link: {
+        type: 'doc',
+        id: 'section/category/subcategory/index',
+      },
+      items: [
+        'section/category/subcategory/page-1',
+        'section/category/subcategory/page-2',
+      ],
+    },
+    'section/category/page-3',
+    'section/category/page-4',
+  ],
+}
 ```
 
-그러면 `/docs/guides/index.mdx`는 `/docs/guides/setup/install.mdx`에 대한 링크가 아닌 `/docs/guides/setup/index.mdx`에 대한 링크를 포함해야 한다.
+### Required format
+
+각 카테고리 index page는 다음 구조를 사용해야 한다:
+
+```mdx
+---
+title: Page Title
+description: A brief description of the page.
+keywords: [ keywords, describing, topics, on, page ]
+pagination_prev: null
+---
+
+Brief sentence to introduce category.
+
+import DocCardList from '@theme/DocCardList';
+
+<DocCardList />
+```
+
+`<DocCardList />` component는 sidebar 파일에 정의된 모든 하위 카테고리와 하위 페이지에 대한 card module로 페이지를 자동 채운다.
 
 ---
 
@@ -1116,15 +1295,3 @@ Navigate into your home directory after installing the IDE.
 대체 텍스트를 사용하여 이미지가 보여주는 것을 설명한다. 캡션을 사용하여 페이지 맥락에서 이미지가 왜 의미 있는지 설명한다.
 
 이미지는 텍스트의 대체물이 아니다. 이미지는 텍스트를 보완해야만 한다. 텍스트 형식이 아닌 정보를 전달하기 위해 이미지에 의존하지 않는다. 예를 들어 값 테이블의 이미지는 여러 가능한 이유로 이미지가 표시되지 않으면 누구에게도 도움이 되지 않는다.
-
----
-
-## Reference style guides {#reference-style-guides}
-
-- [Write the Docs Style Guide article](https://www.writethedocs.org/guide/writing/style-guides/)
-- [GitLab Style Guide](https://docs.gitlab.com/ee/development/documentation/styleguide/index.html) - managed as a community project
-- [Digital Ocean Style Guide](https://www.digitalocean.com/community/tutorials/digitalocean-s-technical-writing-guidelines)
-- [SUSE Style Guide](https://documentation.suse.com/en-us/style/current/single-html/docu_styleguide/#sec-techwriting)
-- [Microsoft Style Guide](https://docs.microsoft.com/en-us/style-guide/welcome/)
-- [Google Developer Style Guide](https://developers.google.com/style)
-- [CDN Language and Style Reference](http://cdn.static-economist.com/sites/default/files/pdfs/style_guide_12.pdf)

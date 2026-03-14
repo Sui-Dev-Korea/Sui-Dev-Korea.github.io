@@ -1,0 +1,52 @@
+---
+title: Manifest Reference
+description: package manifest 파일 예시를 살펴본다.
+keywords: [ move, move reference, package management, package manager, move packages, move package management ]
+pagination_prev: null
+---
+
+이 섹션은 프로젝트에서 template로 사용할 수 있는 sample manifest 파일을 제공한다.
+
+`sui`와 `std`에만 의존하는 basic project의 경우, 최소 lockfile은 다음과 같다:
+
+```toml
+[package]
+name = "example"
+```
+
+`mvr` dependency와 Mainnet 및 Testnet branch가 서로 다른 git dependency를 가진 package의 경우는 다음과 같다:
+
+<!-- TODO: usdc doesn't actually have different tags; find a package that does -->
+
+```toml
+[package]
+name = "example"
+
+[dependencies]
+ascii = { r.mvr = "@potatoes/ascii" }
+usdc = { git = "https://github.com/circlefin/stablecoin-sui.git", subdir = "packages/usdc", rev = "releases/testnet" }
+
+[dep-replacements.mainnet]
+usdc = { git = "https://github.com/circlefin/stablecoin-sui.git", subdir = "packages/usdc", rev = "releases/mainnet" }
+```
+
+`testnet_alpha` environment를 정의하는 package의 경우는 다음과 같다:
+
+```toml
+[package]
+name = "example"
+
+[environments]
+testnet_alpha = "4c78adac"
+
+[dependencies]
+ascii = { r.mvr = "@potatoes/ascii" }
+usdc = { git = "https://github.com/circlefin/stablecoin-sui.git", subdir = "packages/usdc", rev = "releases/testnet" }
+
+[dep-replacements.mainnet]
+usdc = { git = "https://github.com/circlefin/stablecoin-sui.git", subdir = "packages/usdc", rev = "releases/testnet" }
+
+[dep-replacements.testnet_alpha]
+ascii = { use-environment = "ascii" }
+usdc = { use-environment = "testnet" }
+```

@@ -1,0 +1,34 @@
+:::info
+
+[`sui-node` binary from AWS](#aws-sui-node)는 Ubuntu version 22.04만 지원한다.
+
+:::
+
+
+Ubuntu 22.04용 `sui-node` binary는 AWS에서 다운로드할 수 있다.
+
+URL에서 commit SHA 또는 version tag를 사용해 원하는 특정 Sui version을 가져올 수 있다.
+
+이 값 중 하나를 사용해 AWS download URL을 구성한다.
+
+URL 형식은 다음과 같다:
+
+```
+https://sui-releases.s3-accelerate.amazonaws.com/<SHA-OR-TAG>/sui-node
+```
+
+`<SHA-OR-TAG>`를 올바른 값으로 바꾼다.
+
+예를 들어 관련 commit SHA가 있는 release를 다운로드하려면 URL은 `https://sui-releases.s3-accelerate.amazonaws.com/00544a588bb71c395d49d91f756e8bfe96067eca/sui-node`이다.
+
+브라우저로 URL에 접속하면 binary가 자동으로 다운로드된다.
+
+다운로드한 뒤에는 파일 위치에서 console을 열고 permission을 `755`로 변경한다.
+
+```sh
+$ chmod 755 sui-node
+```
+
+디렉터리가 아직 포함되어 있지 않다면 파일 위치를 `$PATH` variable에 추가한다.
+
+[Configure a Sui full node](/guides/operator/sui-full-node.mdx)의 단계를 따라 setup을 완료한다.

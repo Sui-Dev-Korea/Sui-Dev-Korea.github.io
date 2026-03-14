@@ -1,0 +1,164 @@
+---
+title: Package Management Migration
+sidebar_label: Migration
+description: 이전 package management 시스템에서 새 최적화 시스템으로 migration하는 방법을 학습한다.
+keywords: [ move, move reference, package management, package manager, migrate, new package manager, update package manager ]
+pagination_prev: null
+---
+
+Sui CLI 버전 1.63은 package management 시스템을 크게 개편했다. 이 문서는 이전 시스템과 새 시스템 사이의 변경 사항을 설명하고 package를 migration하는 지침을 제공한다. 새 시스템의 전체 세부 사항은 [the package management user guide](/guides/developer/packages/move-package-management.mdx)를 참조한다.
+
+새 시스템은 다음과 같은 여러 이점을 제공한다:
+
+ - **여러 environment를 고려한 설계**: 동일한 package에 대해 여러 `Move.toml` 파일이 필요하지 않아야 한다.
+ - **예측 가능성과 오프라인 rebuild**: dependency는 manifest를 변경하는 경우에만 변경된다.
+ - **유연한 로컬 naming**: 같은 이름을 가진 여러 package에 의존할 수 있다.
+ - **기타 편의 기능**: 더 빠른 git 다운로드, 저장된 upgrade capability, 로컬 publication용 tooling을 제공한다.
+
+이 정도 규모의 변경에는 분명히 몇 가지 문제가 생길 수 있다. 새 package 시스템을 사용하면서 겪는 문제는 [here](https://github.com/MystenLabs/sui/issues/24540)에 보고한다.
+
+## Migrating `Move.toml`
+
+새 package 시스템은 기존 package와 계속 동작하지만 가능한 한 빨리 새 형식으로 migration하는 것을 권장한다. migration 단계는 다음과 같다:
+
+1. `Move.toml`의 `name` field를 Move 코드가 package에 사용하는 이름으로 바꾼다([more info](#package-section)).
+2. `Move.toml`의 dependency 이름을 Move 코드가 해당 dependency를 참조하는 이름과 일치하도록 바꾼다([more info](#dependencies-section)).
+3. `Move.toml`의 `[addresses]` 및 `[dev-addresses]` section을 제거한다([more info](#no-addresses-section)).
+4. 필요하면 `[dev-dependencies]`를 [moded dependencies](/guides/developer/packages/move-package-management.mdx#advanced-dependency-configuration)로 바꾼다.
+
+예를 들어 이전 `Move.toml`이 다음과 같았다면
+
+```toml
+[package]
+name = "MyPackage"
+
+[dependencies]
+Dependency = { ... }
+
+[addresses]
+my_package = "0x0"
+```
+
+새 `Move.toml`은 다음과 같다
+
+```toml
+[package]
+name = "my_package"
+
+[dependencies]
+dep = { ... }
+```
+
+## Publishing on Devnet and Localnet
+
+Mainnet과 Testnet의 publication workflow는 새 package 시스템으로도 바뀌지 않아야 한다. 하지만 `localnet`이나 `devnet` 같은 ephemeral network에 publish할 때는 `Published.toml` 파일을 로컬 address로 오염시키지 않기 위해 `sui client test-publish` 명령을 사용해야 한다.
+
+`test-publish` 명령은 `Published.toml`에 쓰는 대신 address를 ephemeral publication 파일(예: `Pub.localnet.toml`)에 기록한다. 사용할 파일은 `--pubfile-path` option으로 선택할 수 있다. 여러 package를 publish하려면 모든 package에 대해 동일한 ephemeral publication 파일을 사용해야 dependency address가 올바르게 설정된다. 이 과정은 `--publish-unpublished-deps` [flag](/guides/developer/packages/move-package-management.mdx#ephemerally-publishing-dependencies)로 자동화할 수도 있다.
+
+:::caution
+`--with-unpublished-deps`를 사용하고 있었다면 거의 확실히 대신 `--publish-unpublished-deps`를 사용해야 한다.
+:::
+
+`test-publish` 명령은 어떤 dependency를 ephemeral publication에 사용할지 결정하기 위해 "build environment"를 필요로 한다(Testnet 또는 Mainnet이 기본값이지만 [define your own](/guides/developer/packages/move-package-management.mdx#environments)도 가능하다). build environment는 `--build-env <env>` flag로 지정한다.
+
+## Changes to the `Move.toml` file
+
+package는 `Move.toml` 파일로 구성한다. 시스템은 또한 자체 정보를 `Move.lock` 파일에 관리한다. 이 파일들의 형식이 변경되었다.
+
+### No `addresses` section
+
+새 시스템에서는 더 이상 named address를 제공할 수 없다. 대신 package에 사용되는 이름은 `[dependencies]` section에서 package에 부여한 이름 또는 package 자신의 이름에 대한 `[package]` section에서 온다.
+
+예를 들어 `example_package`라는 package가 있고 이 package가 `example_dependency`에 의존하며 `example_dependency`가 다시 `dep_of_dep`에 의존한다고 가정한다. Move 코드에서는 다음과 같이 쓸 수 있다:
+
+```move
+module example_package::m;
+use example_dependency::n;
+use dep_of_dep::p;
+```
+
+이전 package management 시스템에서는 `example_package`의 `Move.toml`에 다음이 들어갈 수 있었다:
+
+```toml
+[package]
+name = "Example"
+
+[dependencies]
+ExampleDep = { local = "../example_dependency" }
+
+[addresses]
+example_package = "0x0"
+```
+
+`ExampleDep`와 `Example` 이름은 무시된다. source code 이름 `example_package`는 `addresses` section에서 오고, 이름 `example_dependency`는 `../example_dependency/Move.toml`에서 오며, 이름 `dep_of_dep`는 `example_dependency`가 의존하는 package의 `Move.toml` 파일에서 온다.
+
+새 시스템에서 `example_package`의 `Move.toml`은 다음과 같다:
+
+```toml
+[package]
+name = "example_package"
+
+[dependencies]
+example_dependency = { local = "../example_dependency" }
+dep_of_dep = { git = "..." }
+```
+
+source code에서 이름으로 참조하는 모든 package에 대해 dependency를 정의해야 하지만 해당 package를 직접 사용하지 않는다면 dependency를 추가할 필요는 없다. dependency에 대해 `Move.toml`에서 사용하는 이름이 Move 코드에서 이름을 정의한다. `[package]` section에 사용하는 이름은 Move에서 자신의 address를 참조하는 방식이다.
+
+### `package` section
+
+manifest의 `[package]` section에는 2가지 변경 사항이 있다:
+
+1. manifest에서 사용하는 `name`을 코드에서 사용하는 이름과 일치하도록 바꿔야 한다.
+
+2. 새 `implicit-dependencies = false` field가 추가되었다. 이전 package management 시스템에서는 명시적 system dependency를 추가하면 implicit dependency가 비활성화되었다. 새 시스템에서는 implicit dependency를 끄려면 `[package]` section에 `implicit-dependencies = false`를 명시적으로 포함해야 한다.
+
+Sui는 implicit dependency를 비활성화하지 말 것을 권장한다.
+
+### `dependencies` section
+
+`[dependencies]` section에서는 source code가 이름으로 참조하는 각 package를 정의해야 한다. dependency에 부여하는 이름은 source code에서 사용하는 이름과 동일하다.
+
+`../example`에 대한 dependency를 포함하고 이를 `example_dependency`로 참조하고 싶다면 다음과 같이 작성한다:
+
+```toml
+[dependencies]
+example_dependency = { local = "../example" }
+```
+
+이전 시스템과 마찬가지로 `git`, `local`, 또는 `r.<resolver>` dependency(예: `r.mvr`)를 사용할 수 있다. `on-chain` dependency 지원은 계획되어 있지만 아직 구현되지 않았다.
+
+`git` dependency의 `rev` 같은 유형별 field 외에도 모든 dependency는 `override = true`를 허용한다. 이는 이전 시스템에서 동작하던 방식과 완전히 같다.
+
+Sui는 dependency에 부여하는 이름이 dependency가 스스로 부여한 이름(`../example/Move.toml`의 `name` field)과 일치하도록 요구해 일관성을 장려한다. 그러나 이름을 재정의하고 싶다면 dependency에 `rename-from` field를 추가할 수 있다. 예를 들어 `../example/Move.toml`에 `name = "example"`이 있었다면 다음과 같이 쓸 수 있다:
+
+```toml
+[dependencies]
+example_dependency = { local = "../example", rename-from = "example" }
+```
+
+그러면 dependency의 Move 코드는 자신을 `example`로 참조하더라도 여러분의 Move 코드는 `example_dependency`를 사용해 해당 package를 참조한다.
+
+이를 통해 우연히 같은 이름을 가진 dependency를 쉽게 함께 사용할 수 있다:
+
+```toml
+[dependencies]
+alices_mathlib = { git = "https://github.com/alice.git", rename-from = "mathlib" }
+bobs_mathlib = { git = "https://github.com/bob.git", rename-from = "mathlib" }
+```
+
+### Git dependencies with short SHAs
+
+새 시스템은 이전 시스템보다 git dependency를 훨씬 더 효율적으로 처리한다. dependency가 pin되고 fetch되면 이후 build에서는 더 이상 git과 상호작용할 필요가 없다. 새 시스템은 필요한 파일과 버전만 다운로드하므로 다운로드가 훨씬 빠르다.
+
+하지만 git dependency에 `rev = "<commit hash>"`가 있고 `<commit hash>`가 40자 전체 SHA가 아니라면 시스템은 SHA를 확장하기 위해 전체 commit history를 다운로드해야 한다. 특정 commit에 대한 dependency를 추가하려면 전체 40자 SHA를 포함한다.
+
+## Changes to `Move.lock`
+
+새 package 시스템에서는 `Move.lock` 파일 형식이 변경되었다. 일반적으로 `Move.lock`을 직접 읽거나 수정할 필요는 없지만 새 CLI를 처음 package에 실행하면 `Move.lock` 파일을 다시 생성하므로 이 변경 사항을 source control에 커밋해야 한다.
+
+## Introduction of `Published.toml`
+
+새 package 시스템은 더 이상 publish된 address를 `Move.lock` 파일에 기록하지 않으며, 대신 `Published.toml`이라는 새 파일에 기록한다. 이 파일은 source control에 커밋해야 한다.
+
+[ephemeral publication](/guides/developer/packages/move-package-management.mdx#environments)의 경우 package 시스템은 ephemeral 파일(대개 `Pub.<env>.toml`이라는 이름)을 사용하며 이 파일은 source control에 커밋하면 안 된다. `Pub.*.toml`을 `.gitignore` 파일에 추가하는 것을 권장한다.
