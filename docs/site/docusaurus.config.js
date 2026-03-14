@@ -43,7 +43,7 @@ const config = {
   // For GitHub pages deployment, it is often '/<projectName>/'
   baseUrl: "/",
 
-  onBrokenLinks: "warn",
+  onBrokenLinks: "throw",
   onBrokenAnchors: "ignore",
   onDuplicateRoutes: 'ignore',
 
@@ -53,8 +53,8 @@ const config = {
     format: "detect",
     mermaid: true,
     hooks: {
-      onBrokenMarkdownLinks: 'warn',
-    },
+    onBrokenMarkdownLinks: 'throw',
+  },
   },
   
   clientModules: [require.resolve("./src/client/pushfeedback-toc.js")],
