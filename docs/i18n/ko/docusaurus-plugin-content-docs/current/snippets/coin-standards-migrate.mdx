@@ -1,0 +1,41 @@
+## Migration from Coin to Currency Standard
+
+Sui는 하위 호환성을 유지하면서 `CoinMetadata<T>` 시스템에서 마이그레이션할 수 있는 경로를 제공한다.
+
+마이그레이션 시스템은 데이터 무결성을 유지하고 기존 기능을 보존하기 위한 특정 제약 조건을 포함하도록 설계되었다. 마이그레이션은 참조로 수행될 때만 permissionlessly 발생할 수 있으며, 이는 원본 `CoinMetadata` object가 그대로 유지되는 동안 그 데이터가 복사되어 registry에 새 `Currency` entry를 생성한다는 것을 의미한다. 이 접근 방식은 `MetadataCap`이 아직 클레임되지 않은 경우에만, 새로운 currency 데이터의 안전한 등록과 기존 currency 데이터의 업데이트를 가능하게 한다.
+
+그러나 시스템은 값으로 수행되는 permissionless 마이그레이션을 허용할 수 없으며, 이 경우 원본 `CoinMetadata` object가 마이그레이션 중에 소비되거나 파괴된다. 이 제한이 존재하는 이유는 일부 코인이 `CoinMetadata` 업데이트를 제어하는 거버넌스 메커니즘을 가지기 때문이다. 값 기반 마이그레이션을 허용하면 거버넌스 시스템이 관리할 것으로 기대하는 메타데이터 object를 파괴함으로써 기존 거버넌스 워크플로를 돌이킬 수 없게 중단시킨다.
+
+레거시 `CoinMetadata` object의 파괴는 해당 `MetadataCap`이 클레임된 이후에만 허용되며, 이는 currency 소유자가 새로운 registry 시스템을 통해 제어권을 획득했다는 증거 역할을 한다. 이는 거버넌스 시스템이 여전히 레거시 메타데이터에 의존하는 동안 레거시 메타데이터가 실수로 파괴되지 않도록 보장하며, 레거시 object를 정리하기 전에 소유자가 명시적으로 제어권을 클레임해야 하는 명확한 전환 경로를 제공한다.
+
+이 설계는 하위 호환성을 유지하면서도 중앙화된 registry 시스템으로의 원활한 전환을 가능하게 하며, 소유자가 새로운 시스템으로 완전히 마이그레이션할 준비가 될 때까지 기존 거버넌스 메커니즘을 보호한다.
+
+Coin Registry로 마이그레이션하면 다음과 같은 이점이 있다:
+
+- **Centralized management:** 모든 코인 정보에 대한 단일 source of truth.
+- **Enhanced features:** 고급 supply model 및 regulatory tracking에 대한 액세스.
+- **Ecosystem integration:** 지갑, 거래소, 앱에 대한 더 나은 지원.
+- **Future-proofing:** 지속적인 registry 개선에 대한 액세스.
+
+### Migration process
+
+1. **Metadata migration:** `migrate_legacy_metadata<T>()`를 사용하여 기존 `CoinMetadata<T>` 정보를 기반으로 새 `Currency<T>` entry를 생성한다.
+    <ImportContent source="crates/sui-framework/packages/sui-framework/sources/registries/coin_registry.move" mode="code" fun="migrate_legacy_metadata" noTitle signatureOnly noComments />
+
+1. **Regulatory migration:** deny list capability가 있는 코인의 경우 다음을 사용한다:
+   - `migrate_regulated_state_by_metadata<T>()`: 기존 메타데이터를 기반으로 마이그레이션한다.
+
+        <ImportContent source="crates/sui-framework/packages/sui-framework/sources/registries/coin_registry.move" mode="code" fun="migrate_regulated_state_by_metadata" noTitle signatureOnly noComments />
+
+   - `migrate_regulated_state_by_cap<T>()`: deny capability를 기반으로 마이그레이션한다.
+
+        <ImportContent source="crates/sui-framework/packages/sui-framework/sources/registries/coin_registry.move" mode="code" fun="migrate_regulated_state_by_cap" noTitle signatureOnly noComments />
+
+### Migration function mappings
+
+`coin` 모듈에 의존하는 스마트 계약 로직을 업데이트하여 대신 `coin_registry` 모듈을 사용한다:
+
+- `coin::create_currency` -> `coin_registry::new_currency_with_otw`
+- `coin::create_regulated_currency_v2` -> `coin_registry::new_currency_with_otw`
+
+<ImportContent source="crates/sui-framework/packages/sui-framework/sources/registries/coin_registry.move" mode="code" fun="new_currency_with_otw" signatureOnly noComments />

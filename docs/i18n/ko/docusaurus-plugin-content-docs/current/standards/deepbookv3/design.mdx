@@ -176,7 +176,3 @@ Book 내 주문 생성에는 다음 세 가지 주요 작업이 포함된다:
 그다음 자산 유형별로 `balances_out`과 `balances_in`을 비교한다. `balances_out` 합계가 `balances_in`을 초과하면 함수는 볼트 잔액에서 차액을 떼어 `BalanceManager`에 입금한다. 반대로 `balances_in` 합계가 `balances_out`을 초과하면 함수는 `BalanceManager`에서 차액을 인출해 볼트 잔액에 합친다.
 
 이 과정을 base, quote, DEEP 자산 잔액에 대해 반복하여 볼트와 `BalanceManager` 간 모든 자산 잔액이 정확히 반영되고 정산되도록 한다.
-
-## Related links
-
-<RelatedLink href="https://github.com/MystenLabs/deepbookv3" label="DeepBookV3 repository" desc="The DeepBookV3 repository on GitHub." />

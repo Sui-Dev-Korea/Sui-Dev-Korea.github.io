@@ -1,0 +1,95 @@
+### Add address to deny list
+
+`coin::deny_list_v2_add` 함수를 사용하여 제공된 address를 코인의 deny list에 추가한다. 함수의 signature는 다음과 같다:
+
+<ImportContent source="crates/sui-framework/packages/sui-framework/sources/coin.move" mode="code" fun="deny_list_v2_add" noComments />
+
+이 함수를 사용할 때, `DenyList` object(`0x403`), 코인 생성 시 받는 `DenyCap`, 목록에 추가할 address, 그리고 transaction context를 제공한다. 이 함수를 사용한 후, 제공한 address는 다음 epoch까지 코인을 사용할 수 없게 된다.
+
+### Remove address from deny list
+
+`coin::deny_list_v2_remove` 함수를 사용하여 코인의 deny list에서 address를 제거한다.
+
+<ImportContent source="crates/sui-framework/packages/sui-framework/sources/coin.move" mode="code" fun="deny_list_v2_remove" noComments />
+
+이 함수를 사용할 때, `DenyList` object(`0x403`), 코인 생성 시 받는 `DenyCapV2`, 목록에서 제거할 address, 그리고 transaction context를 제공한다. 목록에 없는 address를 제거하려고 하면 `ENotFrozen` 오류를 받으며 함수가 중단된다. 이 함수를 호출한 후, 제공한 address는 다음 epoch까지 코인을 사용할 수 있게 된다.
+
+### Using an SDK
+
+TypeScript 또는 Rust SDK를 사용하여 코인의 `DenyList`에 보관된 address를 조작할 수 있다. 다음 예제는 [regulated coin sample](https://github.com/MystenLabs/regulated-coin-sample)을 기반으로 한다.
+
+<Tabs groupId="sdk-language">
+
+<TabItem label="TypeScript" value="typescript">
+
+```ts
+const tx = new Transaction();
+
+tx.moveCall({
+    target: `0x2::coin::deny_list_v2_add`,
+    arguments: [
+        tx.object(<SUI-DENY-LIST-OBJECT-ID>),
+        tx.object(<DENY-CAP-ID>),
+        tx.pure.address(options.address),
+    ],
+    typeArguments: [<COIN-TYPE>],
+});
+```
+
+- `<SUI-DENY-LIST-OBJECT-ID>`는 `"0x403"`이다.
+- `<DENY-CAP-ID>`는 컨트랙트를 게시하여 받은 `DenyCapV2<REGULATED_COIN>` 타입의 object이다.
+- `options.address`는 차단할 address이다.
+- `<COIN-TYPE>`은 `${PACKAGE-ID}::${MODULE-NAME}::${COIN-NAME}`이며, 예제에 따르면 `${PACKAGE-ID}::regulated_coin::REGULATED_COIN`이다.
+
+</TabItem>
+
+<TabItem label="Rust" value="rust">
+
+```rust
+let mut ptb = ProgrammableTransactionBuilder::new();
+
+let deny_list = ptb.obj(ObjectArg::SharedObject {
+    id: deny_list.0,
+    initial_shared_version: deny_list.1,
+    mutable: true,
+})?;
+let deny_cap = ptb.obj(ObjectArg::ImmOrOwnedObject(deny_cap))?;
+let address = ptb.pure(cmd.address())?;
+ptb.command(Command::move_call(
+    SUI_FRAMEWORK_PACKAGE_ID,
+    Identifier::from(COIN_MODULE_NAME),
+    Identifier::from_str("deny_list_v2_add".to_string())?,
+    vec![<otw-type>],
+    vec![deny_list, deny_cap, address],
+));
+
+let builder = ptb.finish();
+```
+
+- `deny_list`는 `(ObjectID, SequenceNumber)` 타입이다.
+  - `ObjectID`는 `0x403`이다.
+  - `SequenceNumber`는 `DenyList` 싱글톤의 `initial_shared_version`이다.
+- `deny_cap`은 게시자가 받은 `DenyCapV2<REGULATED_COIN>`의 `ObjectRef` (`(ObjectID, SequenceNumber, ObjectDigest)`)이다.
+- `otw_type`은 `<PACKAGE_ID>::regulated_coin::REGULATED_COIN` 타입에서 생성된 `TypeTag`이다.
+- `cmd.address()`는 차단할 address를 `SuiAddress`로 반환한다.
+
+</TabItem>
+
+</Tabs>
+
+## Globally pausing and unpausing regulated coin activity
+
+코인 활동의 글로벌 일시 중지는 규제된 코인 타입에만 적용된다.
+
+### Pause coin activity
+
+`allow_global_pause` 필드가 `true`로 설정된 규제된 코인 타입에 대해 네트워크 전체의 활동을 일시 중지하려면 `coin::deny_list_v2_enable_global_pause`를 사용한다. 일시 중지를 시작하려면 코인 타입의 `DenyCapV2` object를 제공해야 한다. Transaction 활동은 즉시 일시 중지되며, 일시 중지 호출 다음 epoch에는 어떤 address도 코인을 받을 수 없다.
+
+<ImportContent source="crates/sui-framework/packages/sui-framework/sources/coin.move" mode="code" fun="deny_list_v2_enable_global_pause" noComments signatureOnly />
+
+### Unpause coin activity
+
+일시 중지된 규제된 코인의 네트워크 활동을 다시 시작하려면 `coin::deny_list_v2_disable_global_pause` 함수를 사용한다. 일시 중지와 마찬가지로, 코인 타입의 `DenyCapV2` object를 제공해야 한다. Transaction 활동은 즉시 재개되며, 일시 중지 해제 호출 다음 epoch부터 address들이 코인을 받기 시작할 수 있다.
+
+<ImportContent source="crates/sui-framework/packages/sui-framework/sources/coin.move" mode="code" fun="deny_list_v2_disable_global_pause" noComments signatureOnly  />
+

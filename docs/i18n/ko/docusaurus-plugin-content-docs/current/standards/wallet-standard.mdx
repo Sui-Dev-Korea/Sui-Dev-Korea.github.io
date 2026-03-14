@@ -34,7 +34,7 @@ import { SUI_DEVNET_CHAIN, Wallet } from '@mysten/wallet-standard';
 
 class YourWallet implements Wallet {
 	get version() {
-		// 이 Wallet이 구현하는 Wallet Standard 버전을 반환한다(이 경우 1.0.0이다).
+		// 구현하는 Wallet Standard의 version을 반환한다(이 경우 1.0.0).
 		return '1.0.0';
 	}
 
@@ -46,7 +46,7 @@ class YourWallet implements Wallet {
 		return 'some-icon-data-url';
 	}
 
-	// 지갑이 지원하는 Sui chain을 반환한다.
+	// wallet이 지원하는 Sui chains를 반환한다.
 	get chains() {
 		return [SUI_DEVNET_CHAIN];
 	}
@@ -100,7 +100,7 @@ import {
 } from "@mysten/wallet-standard";
 
 class YourWallet implements Wallet {
-	/* ... 위에서 작성한 기존 코드 ... */
+	/* ... existing code from above ... */
 
   get features(): ConnectFeature & EventsFeature & SuiFeatures {
     return {
@@ -128,23 +128,23 @@ class YourWallet implements Wallet {
   };
 
   #on: EventsOnMethod = () => {
-    // 지갑의 이벤트 on 구현이다.
+    // wallet의 events on 구현
   };
 
   #connect: ConnectMethod = () => {
-    // 지갑의 connect 구현이다.
+    // wallet의 connect 구현
   };
 
 	#signPersonalMessage: SuiSignPersonalMessageMethod = () => {
-    // 지갑의 signPersonalMessage 구현이다.
+    // wallet의 signPersonalMessage 구현
   };
 
   #signTransaction: SuiSignTransactionMethod = () => {
-    // 지갑의 signTransaction 구현이다.
+    // wallet의 signTransaction 구현
   };
 
   #signAndExecuteTransaction: SuiSignAndExecuteTransactionMethod = () => {
-    // 지갑의 signAndExecuteTransaction 구현이다.
+    // wallet의 signAndExecuteTransaction 구현
   };
 }
 ```
@@ -164,17 +164,17 @@ import { ReadonlyWalletAccount } from '@mysten/wallet-standard';
 
 class YourWallet implements Wallet {
 	get accounts() {
-		// 이미 내부적으로 account에 대한 표현을 가지고 있다고 가정한다.
+		// 이미 account에 대한 내부 표현이 있다고 가정한다:
 		return someWalletAccounts.map(
 			(walletAccount) =>
 				new ReadonlyWalletAccount({
 					address: walletAccount.suiAddress,
 					publicKey: walletAccount.pubkey,
-					// 이 account가 지원하는 Sui chain이다. 이는 지갑이 지원하는 chain의 부분 집합일 수 있다.
-          // 이러한 chain은 지갑에도 반드시 존재해야 한다.
+					// 이 account가 지원하는 Sui chains이다. 이는 wallet이 지원하는 chains의 부분집합일 수 있다.
+          // 이 chains는 wallet에도 존재해야 한다.
 					chains: [SUI_DEVNET_CHAIN],
-					// 이 account가 지원하는 feature이다. 이는 지갑이 지원하는 feature의 부분 집합일 수 있다.
-					// 이러한 feature는 지갑에도 반드시 존재해야 한다.
+					// 이 account가 지원하는 features이다. 이는 wallet이 지원하는 features의 부분집합일 수 있다.
+					// 이 features는 wallet에도 존재해야 한다.
 					features: [
 						SuiSignPersonalMessage,
             SuiSignTransaction,

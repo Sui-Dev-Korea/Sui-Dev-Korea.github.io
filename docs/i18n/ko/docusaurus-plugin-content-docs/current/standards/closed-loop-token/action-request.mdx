@@ -85,28 +85,28 @@ let tx = new Transaction();
 let tokenType = '0x....::my_token::MY_TOKEN';
 let treasuryCapArg = tx.object('0x....');
 
-// mint 10 tokens using the `TreasuryCap`
+// `TreasuryCap`을 사용해 토큰 10개를 민트한다
 let token = tx.moveCall({
 	target: '0x2::token::mint',
 	arguments: [treasuryCapArg, tx.pure.u64(10)],
 	typeArguments: [tokenType],
 });
 
-// transfer the token to a recipient; receive an `ActionRequest`
+// 토큰을 수신자에게 전송하고 `ActionRequest`를 받는다
 let request = tx.moveCall({
 	target: '0x2::token::transfer',
 	arguments: [token, tx.pure.address('0x...')],
 	typeArguments: [tokenType],
 });
 
-// confirm the request with the `TreasuryCap`
+// `TreasuryCap`으로 요청을 확인한다
 tx.moveCall({
 	target: '0x2::token::confirm_with_treasury_cap',
 	arguments: [treasuryCapArg, request],
 	typeArguments: [tokenType],
 });
 
-// submit the transaction
+// transaction을 제출한다
 // ...
 ```
 
@@ -146,14 +146,14 @@ let request = tx.moveCall({
 	typeArguments: [tokenType],
 });
 
-// expecting the `TokenPolicy` to have the `transfer` operation allowed
+// `TokenPolicy`에 `transfer` operation이 허용되어 있기를 기대한다
 tx.moveCall({
 	target: '0x2::token::confirm_request',
 	arguments: [tokenPolicyArg, request],
 	typeArguments: [tokenType],
 });
 
-// submit the transaction
+// transaction을 제출한다
 // ...
 ```
 
@@ -192,14 +192,14 @@ let request = tx.moveCall({
 	typeArguments: [tokenType],
 });
 
-// TokenPolicyCap으로 요청 확인
+// TokenPolicyCap으로 요청을 확인한다
 tx.moveCall({
 	target: '0x2::token::confirm_with_policy_cap',
 	arguments: [tokenPolicyCapArg, request],
 	typeArguments: [tokenType],
 });
 
-// 트랜잭션 제출
+// transaction을 제출한다
 // ...
 ```
 

@@ -51,16 +51,17 @@ use std::string::String;
 use sui::dynamic_field as df;
 use sui::kiosk::{Self, Kiosk, KioskOwnerCap};
 
-/// Kiosk Name Extension용 dynamic field 키
+/// Kiosk Name Extension의 dynamic field 키
+/// Kiosk Name Extension의 dynamic field 키
 struct KioskName has copy, store, drop {}
 
-/// Kiosk에 이름 추가 (이 구현에서는 한 번만 호출 가능)
+/// Kiosk에 name을 추가한다(이 구현에서는 한 번만 호출할 수 있다)
 public fun add(self: &mut Kiosk, cap: &KioskOwnerCap, name: String) {
     let uid_mut = self.uid_mut_as_owner(cap);
     df::add(uid_mut, KioskName {}, name)
 }
 
-/// Kiosk 이름 읽기 시도 - 설정된 경우 Some(String), 아니면 None 반환
+/// Kiosk의 name을 읽어 보며, 설정되어 있으면 Some(String)을, 아니면 None을 반환한다
 public fun name(self: &Kiosk): Option<String> {
     if (df::exists_(self.uid(), KioskName {})) {
         option::some(*df::borrow(self.uid(), KioskName {}))
@@ -112,15 +113,15 @@ module examples::letterbox_ext;
 
 use sui::kiosk_extension;
 
-// ... dependencies
+// ... 의존성
 
-/// Extension에 필요한 권한 집합. `place` 필요.
+/// extension에 필요한 권한 집합으로, `place`가 필요하다.
 const PERMISSIONS: u128 = 1;
 
-/// Extension을 식별하고 인증하는 데 사용되는 Witness struct
+/// extension을 식별하고 권한을 부여하는 데 사용하는 Witness struct이다.
 struct Extension has drop {}
 
-/// Kiosk에 Mallbox extension 설치.
+/// Mallbox extension을 Kiosk에 설치한다.
 public fun add(kiosk: &mut Kiosk, cap: &KioskOwnerCap, ctx: &mut TxContext) {
     kiosk_extension::add(Extension {}, kiosk, cap, PERMISSIONS, ctx)
 }
@@ -153,15 +154,16 @@ Bit | Decimal | Permission
 
 ```move
 module examples::letterbox_ext;
-// ... dependencies
+// ... 의존성
 
-/// 앱에 필요한 권한 집합. `place` 필요.
+/// app에 필요한 권한 집합으로, `place`가 필요하다.
+/// app에 필요한 권한 집합으로, `place`가 필요하다.
 const PERMISSIONS: u128 = 1;
 
-/// 앱을 식별하고 인증하는 데 사용되는 witness struct
+/// app을 식별하고 권한을 부여하는 데 사용하는 witness struct이다.
 struct Extension has drop {}
 
-/// Kiosk에 Mallbox 앱 설치 및 `place` 권한 요청
+/// Mallbox app을 kiosk에 설치하고 `place` 권한을 요청한다.
 public fun add(kiosk: &mut Kiosk, cap: &KioskOwnerCap, ctx: &mut TxContext) {
     kiosk_extension::add(Extension {}, kiosk, cap, PERMISSIONS, ctx)
 }
@@ -175,10 +177,10 @@ public fun add(kiosk: &mut Kiosk, cap: &KioskOwnerCap, ctx: &mut TxContext) {
 module examples::letterbox_ext;
 // ...
 
-/// 권한 없이 item을 place하려 할 때 발생
+/// 권한 없이 item을 place하려고 할 때 방출된다.
 const ENotEnoughPermissions: u64 = 1;
 
-/// `KioskOwnerCap` 없이 kiosk에 letter를 place
+/// `KioskOwnerCap` 없이 kiosk에 letter를 place한다.
 public fun place(kiosk: &mut Kiosk, letter: Letter, policy: &TransferPolicy<T>) {
     assert!(kiosk_extension::can_place<Extension>(kiosk), ENotEnoughPermissions)
 
@@ -251,8 +253,3 @@ txb.moveCall({
     typeArguments: '<letter_box_package>::letterbox_ext::Extension'
 });
 ```
-
-## Related links
-
-<RelatedLink to="/guides/developer/nft/nft-rental.mdx" />
-<RelatedLink href="https://github.com/MystenLabs/sui/tree/main/examples/move/nft-rental" label="NFT Rental repository" desc="GitHub repo that contains the source code for the NFT Rental app." />
