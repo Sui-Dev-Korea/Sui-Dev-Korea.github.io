@@ -1,13 +1,18 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import { translateSidebarLabel } from '../../site/src/sidebarTranslate.js';
+
+const t = (id, message, description) =>
+  translateSidebarLabel(`sidebar.concepts.${id}`, message, description);
+
 const concepts = [
 	'concepts',
 	'concepts/sui-for-ethereum',
 	'concepts/sui-for-solana',
 	{
 		type: 'category',
-		label: 'Architecture',
+		label: t('architecture', 'Architecture', 'Concepts sidebar label for architecture'),
 		link: {
 			type: 'doc',
 			id: 'concepts/sui-architecture/index',
@@ -24,7 +29,7 @@ const concepts = [
 	},
 	{
 		type: 'category',
-		label: 'Tokenomics',
+		label: t('tokenomics', 'Tokenomics', 'Concepts sidebar label for tokenomics'),
 		link: {
 			type: 'doc',
 			id: 'concepts/tokenomics/index',
@@ -38,7 +43,7 @@ const concepts = [
 	},
 	{
 		type: 'category',
-		label: 'Accessing Data',
+		label: t('accessingData', 'Accessing Data', 'Concepts sidebar label for accessing data'),
 		link: {
 			type: 'doc',
 			id: 'concepts/data-access/data-serving',
@@ -49,7 +54,7 @@ const concepts = [
 			'concepts/data-access/archival-store',
 			{
 				type: 'category',
-				label: 'Custom Indexers',
+				label: t('customIndexers', 'Custom Indexers', 'Concepts sidebar label for custom indexers'),
 				link: {
 					type: 'doc',
 					id: 'concepts/data-access/custom-indexers',
@@ -64,7 +69,7 @@ const concepts = [
 	},
 	{
 		type: 'category',
-		label: 'Cryptography',
+		label: t('cryptography', 'Cryptography', 'Concepts sidebar label for cryptography'),
 		link: {
 			type: 'doc',
 			id: 'concepts/cryptography/index',

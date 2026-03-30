@@ -1,13 +1,18 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import { translateSidebarLabel } from '../../site/src/sidebarTranslate.js';
+
+const t = (id, message, description) =>
+  translateSidebarLabel(`sidebar.standards.${id}`, message, description);
+
 const standards = [
 	'standards',
 	'standards/coin',
 	'standards/currency',
 	{
 		type: 'category',
-		label: 'Closed-Loop Token',
+		label: t('closedLoopToken', 'Closed-Loop Token', 'Standards sidebar label for the Closed-Loop Token docs'),
 		link: {
 			type: 'doc',
 			id: 'standards/closed-loop-token',
@@ -24,7 +29,7 @@ const standards = [
 	'standards/kiosk-apps',
 	{
 		type: 'category',
-		label: 'DeepBookV3',
+		label: t('deepBookV3', 'DeepBookV3', 'Standards sidebar label for DeepBookV3'),
 		link: {
 			type: 'doc',
 			id: 'standards/deepbook',
@@ -33,7 +38,11 @@ const standards = [
 			'standards/deepbookv3/design',
 			{
 				type: 'category',
-				label: 'Contract Information',
+				label: t(
+					'contractInformation',
+					'Contract Information',
+					'Standards sidebar label for contract information',
+				),
 				key: 'deepbookv3-contract-information',
 				link: {
 					type: 'doc',
@@ -54,7 +63,7 @@ const standards = [
 			'standards/deepbookv3-indexer',
 			{
 				type: 'category',
-				label: 'SDK',
+				label: t('sdk', 'SDK', 'Standards sidebar label for SDK docs'),
 				key: 'deepbookv3-sdk',
 				link: {
 					type: 'doc',
@@ -73,7 +82,7 @@ const standards = [
 	},
 	{
 		type: 'category',
-		label: 'DeepBook Margin',
+		label: t('deepBookMargin', 'DeepBook Margin', 'Standards sidebar label for DeepBook Margin'),
 		link: {
 			type: 'doc',
 			id: 'standards/deepbook-margin',
@@ -83,7 +92,11 @@ const standards = [
 			'standards/deepbook-margin/margin-risks',
 			{
 				type: 'category',
-				label: 'Contract Information',
+				label: t(
+					'contractInformation',
+					'Contract Information',
+					'Standards sidebar label for contract information',
+				),
 				key: 'deepbook-margin-contract-information',
 				link: {
 					type: 'doc',
@@ -103,7 +116,7 @@ const standards = [
 			'standards/deepbook-margin-indexer',
 			{
 				type: 'category',
-				label: 'SDK',
+				label: t('sdk', 'SDK', 'Standards sidebar label for SDK docs'),
 				key: 'deepbook-margin-sdk',
 				link: {
 					type: 'doc',
