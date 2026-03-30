@@ -22,26 +22,60 @@ const SIDEBARS_PATH = fileURLToPath(new URL("./sidebars.js", import.meta.url));
 
 require("dotenv").config();
 
+const DEFAULT_SITE_URL = "https://sui-dev-korea.github.io";
+const siteUrl = (process.env.DOCS_SITE_URL || DEFAULT_SITE_URL).replace(
+  /\/$/,
+  "",
+);
+const siteBaseUrl = process.env.DOCS_BASE_URL || "/";
+const siteHostname = new URL(siteUrl).hostname;
+const googleSiteVerification = process.env.GOOGLE_SITE_VERIFICATION;
+const naverSiteVerification = process.env.NAVER_SITE_VERIFICATION;
+
+const headTags = [
+  {
+    tagName: "meta",
+    attributes: {
+      name: "algolia-site-verification",
+      content: "BCA21DA2879818D2",
+    },
+  },
+  ...(googleSiteVerification
+    ? [
+        {
+          tagName: "meta",
+          attributes: {
+            name: "google-site-verification",
+            content: googleSiteVerification,
+          },
+        },
+      ]
+    : []),
+  ...(naverSiteVerification
+    ? [
+        {
+          tagName: "meta",
+          attributes: {
+            name: "naver-site-verification",
+            content: naverSiteVerification,
+          },
+        },
+      ]
+    : []),
+];
+
 /** @type {import('@docusaurus/types').Config} */
 const config = {
   title: "Sui Documentation",
   tagline:
     "Sui is a next-generation smart contract platform with high throughput, low latency, and an asset-oriented programming model powered by Move",
   favicon: "/img/favicon.ico",
-  headTags: [
-    {
-      tagName: "meta",
-      attributes: {
-        name: "algolia-site-verification",
-        content: "BCA21DA2879818D2",
-      },
-    },
-  ],
+  headTags,
   // Set the production url of your site here
-  url: "https://docs.sui.io",
+  url: siteUrl,
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: "/",
+  baseUrl: siteBaseUrl,
 
   onBrokenLinks: "throw",
   onBrokenAnchors: "ignore",
@@ -80,7 +114,7 @@ const config = {
     [
       require.resolve("./src/shared/plugins/plausible"),
       {
-        domain: "docs.sui.io",
+        domain: process.env.PLAUSIBLE_DOMAIN || siteHostname,
         enableInDev: false,
         trackOutboundLinks: true,
         hashMode: false,

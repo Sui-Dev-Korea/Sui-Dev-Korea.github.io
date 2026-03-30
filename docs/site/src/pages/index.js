@@ -7,9 +7,15 @@ import Layout from "@theme/Layout";
 import Head from "@docusaurus/Head";
 import Link from "@docusaurus/Link";
 import { translate } from "@docusaurus/Translate";
+import useBaseUrl from "@docusaurus/useBaseUrl";
+import useDocusaurusContext from "@docusaurus/useDocusaurusContext";
 import styles from "./index.module.css";
 
 export default function Home() {
+  const { siteConfig, i18n } = useDocusaurusContext();
+  const localizedHomeUrl = new URL(useBaseUrl("/"), siteConfig.url).toString();
+  const localeTag = i18n.currentLocale === "ko" ? "ko-KR" : "en-US";
+
   const text = {
     heroTitle: translate({
       id: "pages.home.hero.title",
@@ -136,6 +142,32 @@ export default function Home() {
       message: "Build your dApp on Sui",
       description: "Homepage call-to-action text",
     }),
+    metaTitle: translate({
+      id: "pages.home.seo.title",
+      message: "Sui Documentation",
+      description: "Homepage SEO title",
+    }),
+    metaDescription: translate({
+      id: "pages.home.seo.description",
+      message:
+        "Guides, concepts, standards, and references for building on Sui.",
+      description: "Homepage SEO description",
+    }),
+    metaKeywords: translate({
+      id: "pages.home.seo.keywords",
+      message:
+        "Sui documentation, Sui guides, Sui concepts, Sui standards, Sui reference, Move",
+      description: "Homepage SEO keywords",
+    }),
+  };
+
+  const websiteStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: text.metaTitle,
+    description: text.metaDescription,
+    url: localizedHomeUrl,
+    inLanguage: localeTag,
   };
 
   const HomeCard = (props) => {
@@ -163,22 +195,23 @@ export default function Home() {
   return (
     <>
       <Head>
-        <meta
-          name="google-site-verification"
-          content="nOyG5Cxvr3m94VHwQFHHaK_5BR6EyAYJ_4oPxYBptPs"
-        />
+        <meta name="keywords" content={text.metaKeywords} />
+        <meta property="og:type" content="website" />
+        <script type="application/ld+json">
+          {JSON.stringify(websiteStructuredData)}
+        </script>
       </Head>
-      <Layout>
-      <div 
+      <Layout title={text.metaTitle} description={text.metaDescription}>
+        <div
           className="overflow-hidden min-h-screen flex flex-col bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundColor: '#000000',
+            backgroundColor: "#000000",
           }}
         >
           <div className="w-full mt-8 mb-4 mx-auto">
             <div className={styles.heroText}>
               <h1 className="h1 center-text text-white">{text.heroTitle}</h1>
-              <h2 className="h2 center-text h3" style={{ color: '#89919F' }}>
+              <h2 className="h2 center-text h3" style={{ color: "#89919F" }}>
                 {text.heroSubtitle}
               </h2>
             </div>

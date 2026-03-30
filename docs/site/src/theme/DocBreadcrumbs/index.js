@@ -4,7 +4,6 @@
 import React from "react";
 import clsx from "clsx";
 import { ThemeClassNames } from "@docusaurus/theme-common";
-import { useWindowSize } from "@docusaurus/theme-common";
 import {
   useSidebarBreadcrumbs,
 } from "@docusaurus/plugin-content-docs/client";
@@ -14,24 +13,6 @@ import { translate } from "@docusaurus/Translate";
 import HomeBreadcrumbItem from "@theme/DocBreadcrumbs/Items/Home";
 import DocBreadcrumbsStructuredData from "@theme/DocBreadcrumbs/StructuredData";
 import styles from "./styles.module.css";
-import { useDoc } from "@docusaurus/plugin-content-docs/client";
-import TOC from "@theme/TOC";
-
-/**
- * Safely access doc context. Returns { frontMatter, toc } or defaults
- * when rendered outside a DocProvider (e.g., category index pages).
- */
-function useDocSafe() {
-  try {
-    const doc = useDoc();
-    return {
-      frontMatter: doc.frontMatter || {},
-      toc: doc.toc || [],
-    };
-  } catch {
-    return { frontMatter: {}, toc: [] };
-  }
-}
 
 function BreadcrumbsItemLink({ children, href, isLast }) {
   const className = "breadcrumbs__link";
@@ -59,22 +40,9 @@ function BreadcrumbsItem({ children, active }) {
   );
 }
 
-function MobileTOC({ toc }) {
-  if (!Array.isArray(toc) || toc.length === 0) return null;
-
-  return (
-    <details className={styles.mobileToc}>
-      <summary className={styles.mobileTocSummary}>On this page</summary>
-      <TOC toc={toc} />
-    </details>
-  );
-}
-
 export default function DocBreadcrumbs() {
   const breadcrumbs = useSidebarBreadcrumbs();
   const homePageRoute = useHomePageRoute();
-  const windowSize = useWindowSize();
-  const isMobile = windowSize === "mobile";
 
   if (!breadcrumbs) {
     return null;
@@ -82,7 +50,7 @@ export default function DocBreadcrumbs() {
 
   return (
     <>
-      {!isMobile && <DocBreadcrumbsStructuredData breadcrumbs={breadcrumbs} />}
+      <DocBreadcrumbsStructuredData breadcrumbs={breadcrumbs} />
       <nav
         className={clsx(
           ThemeClassNames.docs.docBreadcrumbs,

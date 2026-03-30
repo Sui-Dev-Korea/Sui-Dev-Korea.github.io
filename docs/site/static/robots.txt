@@ -1,0 +1,7 @@
+# Copyright (c) Mysten Labs, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+User-agent: *
+Allow: /
+
+Sitemap: https://sui-dev-korea.github.io/sitemap.xml
