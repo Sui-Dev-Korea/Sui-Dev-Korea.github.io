@@ -1,20 +1,15 @@
 // Copyright (c) Mysten Labs, Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { translateSidebarLabel } from '../../site/src/sidebarTranslate.js';
-
-const t = (id, message, description) =>
-  translateSidebarLabel(`sidebar.guides.${id}`, message, description);
-
 const guides = [
   {
     type: 'doc',
-    label: t('developerGuides', 'Developer Guides', 'Guides sidebar label for the developer guides overview'),
+    label: 'Developer Guides',
     id: 'guides',
   },
   {
     type: 'category',
-    label: t('gettingStarted', 'Getting Started', 'Guides sidebar label for getting started'),
+    label: 'Getting Started',
     collapsed: false,
     link: {
       type: 'doc',
@@ -23,7 +18,7 @@ const guides = [
     items: [
       {
         type: 'category',
-        label: t('installSui', 'Install Sui', 'Guides sidebar label for installing Sui'),
+        label: 'Install Sui',
         collapsed: false,
         link: {
           type: 'doc',
@@ -45,7 +40,7 @@ const guides = [
   },
   {
     type: 'category',
-    label: t('objects', 'Objects', 'Guides sidebar label for objects'),
+    label: 'Objects',
     link: {
       type: 'doc',
       id: 'guides/developer/objects/index',
@@ -54,11 +49,7 @@ const guides = [
       'guides/developer/objects/object-model',
       {
         type: 'category',
-        label: t(
-          'typesOfObjectOwnership',
-          'Types of Object Ownership',
-          'Guides sidebar label for object ownership types',
-        ),
+        label: 'Types of Object Ownership',
         link: {
           type: 'doc',
           id: 'guides/developer/objects/object-ownership/index',
@@ -73,7 +64,7 @@ const guides = [
       },
       {
         type: 'category',
-        label: t('transferingObjects', 'Transfering Objects', 'Guides sidebar label for transferring objects'),
+        label: 'Transfering Objects',
         link: {
           type: 'doc',
           id: 'guides/developer/objects/transfers/index',
@@ -87,7 +78,7 @@ const guides = [
       'guides/developer/objects/derived-objects',
       {
         type: 'category',
-        label: t('dynamicFields', 'Dynamic Fields', 'Guides sidebar label for dynamic fields'),
+        label: 'Dynamic Fields',
         link: {
           type: 'doc',
           id: 'guides/developer/objects/dynamic-fields',
@@ -101,7 +92,7 @@ const guides = [
   },
   {
     type: 'category',
-    label: t('packages', 'Packages', 'Guides sidebar label for packages'),
+    label: 'Packages',
     link: {
       type: 'doc',
       id: 'guides/developer/packages/index',
@@ -116,7 +107,7 @@ const guides = [
   },
   {
     type: 'category',
-    label: t('transactions', 'Transactions', 'Guides sidebar label for transactions'),
+    label: 'Transactions',
     link: {
       type: 'doc',
       id: 'guides/developer/transactions/index',
@@ -126,11 +117,7 @@ const guides = [
       'guides/developer/transactions/transaction-lifecycle',
       {
         type: 'category',
-        label: t(
-          'programmableTransactionBlocks',
-          'Programmable Transaction Blocks (PTBs)',
-          'Guides sidebar label for programmable transaction blocks',
-        ),
+        label: 'Programmable Transaction Blocks (PTBs)',
         link: {
           type: 'doc',
           id: 'guides/developer/transactions/ptbs/index',
@@ -144,11 +131,7 @@ const guides = [
       },
       {
         type: 'category',
-        label: t(
-          'transactionAuthentication',
-          'Transaction Authentication',
-          'Guides sidebar label for transaction authentication',
-        ),
+        label: 'Transaction Authentication',
         link: {
           type: 'doc',
           id: 'guides/developer/transactions/transaction-auth/index',
@@ -166,7 +149,7 @@ const guides = [
   },
   {
     type: 'category',
-    label: t('accessingData', 'Accessing Data', 'Guides sidebar label for accessing data'),
+    label: 'Accessing Data',
      link: {
           type: 'doc',
           id: 'guides/developer/accessing-data/index',
@@ -178,11 +161,7 @@ const guides = [
       'guides/developer/accessing-data/using-events',
       {
         type: 'category',
-        label: t(
-          'customIndexingFramework',
-          'Custom Indexing Framework',
-          'Guides sidebar label for the custom indexing framework',
-        ),
+        label: 'Custom Indexing Framework',
         link: {
           type: 'doc',
           id: 'guides/developer/accessing-data/custom-indexer/index',
@@ -197,7 +176,7 @@ const guides = [
   },
   {
     type: 'category',
-    label: t('currenciesAndTokens', 'Currencies and Tokens', 'Guides sidebar label for currencies and tokens'),
+    label: 'Currencies and Tokens',
     link: {
       type: 'doc',
       id: 'guides/developer/coin/index',
@@ -213,7 +192,7 @@ const guides = [
   },
   {
     type: 'category',
-    label: t('nfts', 'NFTs', 'Guides sidebar label for NFTs'),
+    label: 'NFTs',
     link: {
       type: 'doc',
       id: 'guides/developer/nft/index',
@@ -227,7 +206,7 @@ const guides = [
   },
   {
     type: 'category',
-    label: t('wallets', 'Wallets', 'Guides sidebar label for wallets'),
+    label: 'Wallets',
     link: {
       type: 'doc',
       id: 'guides/developer/wallets/index',
@@ -238,7 +217,7 @@ const guides = [
   },
   {
     type: 'category',
-    label: t('onChainPrimitives', 'On-Chain Primitives', 'Guides sidebar label for on-chain primitives'),
+    label: 'On-Chain Primitives',
     link: {
       type: 'doc',
       id: 'guides/developer/on-chain-primitives/index',
@@ -250,7 +229,7 @@ const guides = [
   },
   {
     type: 'category',
-    label: t('cryptography', 'Cryptography', 'Guides sidebar label for cryptography'),
+    label: 'Cryptography',
     link: {
       type: 'doc',
       id: 'guides/developer/cryptography/index',
@@ -263,11 +242,7 @@ const guides = [
       'guides/developer/cryptography/multisig',
       {
         type: 'category',
-        label: t(
-          'zkLoginIntegrationGuide',
-          'zkLogin Integration Guide',
-          'Guides sidebar label for the zkLogin integration guide',
-        ),
+        label: 'zkLogin Integration Guide',
         link: {
           type: 'doc',
           id: 'guides/developer/cryptography/zklogin-integration/index',
@@ -283,7 +258,7 @@ const guides = [
   },
   {
     type: 'category',
-    label: t('nautilus', 'Nautilus', 'Guides sidebar label for Nautilus'),
+    label: 'Nautilus',
     link: {
       type: 'doc',
       id: 'guides/developer/nautilus/index',
@@ -299,7 +274,7 @@ const guides = [
   },
   {
     type: 'category',
-    label: t('appExamples', 'App Examples', 'Guides sidebar label for app examples'),
+    label: 'App Examples',
     link: {
       type: 'doc',
       id: 'guides/developer/app-examples/index',
@@ -315,7 +290,7 @@ const guides = [
       'guides/developer/app-examples/tic-tac-toe',
       {
         type: 'category',
-        label: t('oracles', 'Oracles', 'Guides sidebar label for oracle examples'),
+        label: 'Oracles',
         link: {
           type: 'doc',
           id: 'guides/developer/app-examples/oracle',
@@ -329,7 +304,7 @@ const guides = [
   },
   {
     type: 'category',
-    label: t('operatorGuides', 'Operator Guides', 'Guides sidebar label for operator guides'),
+    label: 'Operator Guides',
     link: {
       type: 'doc',
       id: 'guides/operator/index',
@@ -350,7 +325,7 @@ const guides = [
       'guides/operator/remote-store-setup',
       {
         type: 'category',
-        label: t('suiValidatorNodes', 'Sui Validator Nodes', 'Guides sidebar label for Sui validator nodes'),
+        label: 'Sui Validator Nodes',
         link: {
           type: 'doc',
           id: 'guides/operator/validator-index',
@@ -366,7 +341,7 @@ const guides = [
   },
   {
     type: 'category',
-    label: t('suiPlay0X1', 'SuiPlay0X1', 'Guides sidebar label for SuiPlay0X1'),
+    label: 'SuiPlay0X1',
     collapsed: true,
     link: {
       type: 'doc',
