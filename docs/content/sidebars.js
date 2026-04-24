@@ -375,6 +375,7 @@ export default {
         {
           type: 'category',
           label: 'Contract Information',
+          key: 'deepbookv3-contract-information',
           link: { type: 'doc', id: 'onchain-finance/deepbookv3/contract-information' },
           items: [
             'onchain-finance/deepbookv3/contract-information/balance-manager',
@@ -414,6 +415,7 @@ export default {
         {
           type: 'category',
           label: 'Contract Information',
+          key: 'deepbook-margin-contract-information',
           link: { type: 'doc', id: 'onchain-finance/deepbook-margin/contract-information' },
           items: [
             'onchain-finance/deepbook-margin/contract-information/margin-manager',
